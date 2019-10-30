@@ -276,22 +276,22 @@
   retries: 30
   delay: 30
 
-- name: get grafana route
-  shell: "oc get route {{ grafana_route_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
-  register: grafana_route_output
-  changed_when: false
-
-- set_fact:
-    grafana_route: "{{ grafana_route_output.stdout }}"
-
-- pause:
-    minutes: 2
-
-- name: wait for grafana to be running
-  uri:
-    url: https://{{ grafana_route }}
-    status_code: 200
-  register: result
-  until: result.status == 200
-  retries: 30
-  delay: 30
+#- name: get grafana route
+#  shell: "oc get route {{ grafana_route_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
+#  register: grafana_route_output
+#  changed_when: false
+#
+#- set_fact:
+#    grafana_route: "{{ grafana_route_output.stdout }}"
+#
+#- pause:
+#    minutes: 2
+#
+#- name: wait for grafana to be running
+#  uri:
+#    url: https://{{ grafana_route }}
+#    status_code: 200
+#  register: result
+#  until: result.status == 200
+#  retries: 30
+#  delay: 30
