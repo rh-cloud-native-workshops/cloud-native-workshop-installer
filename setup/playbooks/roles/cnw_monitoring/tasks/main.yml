@@ -1,0 +1,202 @@
+---
+## Install
+
+# Create project
+- name: check if monitoring project {{ project_name }} exists
+  shell: "oc get project {{ project_name }}"
+  register: monitoring_project_result
+  ignore_errors: true
+  changed_when: false
+
+- name: create project {{ project_name }}
+  shell: "oc new-project {{ project_name }} --display-name='{{ project_display_name }}' --description='{{ project_desc }}'"
+  when: monitoring_project_result is failed
+
+- name: assign user as project admin
+  shell: "oc adm policy add-role-to-user admin {{ project_admin }} -n {{ project_name }}"
+  ignore_errors: true
+  when:
+    - monitoring_project_result is failed
+    - project_admin is defined
+    - project_admin is not none
+    - project_admin|trim() != ""
+
+- name: annotate project project {{ project_name }}
+  shell: "oc annotate --overwrite namespace {{ project_name }} {{ project_annotations }}"
+  ignore_errors: true
+  when:
+    - monitoring_project_result is failed
+    - project_annotations is defined
+    - project_annotations is not none
+    - project_annotations|trim() != ""
+
+# Deploy Prometheus using an operator
+- name: Create Operator Group for the Prometheus operator
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1
+      kind: OperatorGroup
+      metadata:
+        name: "prometheus-operator-group"
+        generation: 1
+        namespace: "{{ project_name }}"
+      spec:
+        targetNamespaces:
+        - "{{ project_name }}"
+
+- name: Create a Subscription of the Prometheus operator
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: prometheus
+        namespace: "{{ project_name }}"
+      spec:
+        channel: "{{ prometheus_subsription_channel }}"
+        installPlanApproval: "{{ prometheus_subsription_install_plan_approval }}"
+        name: "{{ prometheus_subsription_name }}"
+        source: "{{ prometheus_subsription_source }}"
+        sourceNamespace: "{{ prometheus_subsription_source_namespace }}"
+        startingCSV: "{{ prometheus_subsription_starting_csv }}"
+
+- name: Create a Prometheus Server CR
+  k8s:
+    state: present
+    definition:
+      apiVersion: monitoring.coreos.com/v1
+      kind: Prometheus
+      metadata:
+        name: server
+        labels:
+          prometheus: k8s
+        namespace: "{{ project_name }}"
+      spec:
+        replicas: 2
+        serviceAccountName: prometheus-k8s
+        securityContext: {}
+        serviceMonitorSelector:
+          matchExpressions:
+            - key: k8s-app
+              operator: Exists
+        ruleSelector: {}
+        alerting:
+          alertmanagers:
+            - namespace: openshift-monitoring
+              name: alertmanager-main
+              port: web
+
+- name: Create a ServiceMonitor CR for "team->backend"
+  k8s:
+    state: present
+    definition:
+      apiVersion: monitoring.coreos.com/v1
+      kind: Prometheus
+      metadata:
+        name: server
+        labels:
+          prometheus: k8s
+        namespace: "{{ project_name }}"
+      spec:
+        replicas: 2
+        version: v2.3.2
+        serviceAccountName: prometheus-k8s
+        securityContext: {}
+        serviceMonitorSelector:
+          matchExpressions:
+            - key: k8s-app
+              operator: Exists
+        ruleSelector:
+          matchLabels:
+            role: prometheus-rulefiles
+            prometheus: k8s
+        alerting:
+          alertmanagers:
+            - namespace: monitoring
+              name: alertmanager-main
+              port: web
+
+- name: Create a ServiceMonitor CR for "team->backend"
+  k8s:
+    state: present
+    definition:
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: backend-monitor
+        labels:
+          k8s-app: backend-monitor
+        namespace: "{{ project_name }}"
+      spec:
+        namespaceSelector:
+          any: true
+        selector:
+          matchLabels:
+            team: backend
+        endpoints:
+          - interval: 30s
+            port: web
+
+- name: Create a ServiceMonitor CR for "team->spring-boot-actuator"
+  k8s:
+    state: present
+    definition:
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        labels:
+          k8s-app: spring-boot-actuator-monitor
+        name: spring-boot-actuator-monitor
+        namespace: "{{ project_name }}"
+      spec:
+        endpoints:
+          - interval: 30s
+            path: /actuator/prometheus
+            port: 8080-tcp
+        namespaceSelector:
+          any: true
+        selector:
+          matchLabels:
+            team: spring-boot-actuator
+
+- name: Adding permission to the Prometheus Operator service account to view Service objects across the cluster
+  shell: "oc adm policy add-cluster-role-to-user view system:serviceaccount:{{ project_name }}:prometheus-k8s"
+
+- name: Create a Route for Prometheus Service
+  k8s:
+    state: present
+    definition:
+      apiVersion: route.openshift.io/v1
+      kind: Route
+      metadata:
+        labels:
+          operated-prometheus: "true"
+        name: prometheus-operated
+        namespace: "{{ project_name }}"
+      spec:
+        port:
+          targetPort: web
+        to:
+          kind: Service
+          name: prometheus-operated
+          weight: 100
+        wildcardPolicy: None
+
+#- name: get prometheus route
+#  shell: "{{ openshift_cli }} get route {{ prometheus_service_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
+#  register: prometheus_route_output
+#  changed_when: false
+
+#- set_fact:
+#    prometheus_route: "{{ prometheus_route_output.stdout }}"
+
+#- name: wait for prometheus to be running
+#  uri:
+#    url: http://{{ prometheus_route }}
+#    status_code: 200
+#  register: result
+#  until: result.status == 200
+#  retries: 30
+#  delay: 30

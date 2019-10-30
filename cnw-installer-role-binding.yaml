@@ -1,0 +1,12 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cnw-installer
+subjects:
+- kind: ServiceAccount
+  name: cnw-installer
+  namespace: "{{NAMESPACE}}"
+roleRef:
+  kind: ClusterRole
+  name: cnw-installer
+  apiGroup: rbac.authorization.k8s.io

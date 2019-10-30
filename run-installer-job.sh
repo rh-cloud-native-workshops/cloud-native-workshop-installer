@@ -15,7 +15,13 @@ oc new-project ${NAMESPACE}
 oc delete secret cnw-token-secret -n ${NAMESPACE}
 
 cat ./cnw-token-secret.yaml | \
-  sed "s/{{\b*NAMESPACE\b*}}/$(echo -n ${NAMESPACE} | base64)/" | \
-  sed "s/{{\b*TOKEN\b*}}/${TOKEN}/" | oc create -n ${NAMESPACE} -f -
+  sed "s/{{\s*NAMESPACE\s*}}/$(echo -n ${NAMESPACE} | base64)/" | \
+  sed "s/{{\s*TOKEN\s*}}/${TOKEN}/" | oc create -n ${NAMESPACE} -f -
 
-oc delete job cnw-installer-batch -n ${NAMESPACE} ;  oc apply -n ${NAMESPACE} -f ./cnw-installer-batch.yaml
+oc apply -n ${NAMESPACE} -f ./cnw-installer-role.yaml
+oc apply -n ${NAMESPACE} -f ./cnw-installer-service-account.yaml
+
+cat ./cnw-installer-role-binding.yaml | \
+  sed "s/{{\s*NAMESPACE\s*}}/${NAMESPACE}/" | oc apply -n ${NAMESPACE} -f -
+
+oc delete job cnw-installer -n ${NAMESPACE} ;  oc apply -n ${NAMESPACE} -f ./cnw-installer-batch.yaml
