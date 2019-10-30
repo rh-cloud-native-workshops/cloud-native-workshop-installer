@@ -1,0 +1,118 @@
+---
+## Eclipse Che Web IDE Install - Multi-user
+
+- name: deploy postgresql for eclipse che and keycloak
+  shell: "{{ openshift_cli }} process -f {{ che_templates_base }}/multi/postgres-template.yaml -p CHE_VERSION={{ che_version }} -l app=che -n {{ project_name }} | {{ openshift_cli }} create -f - -n {{ project_name }}"
+  ignore_errors: true
+
+- name: deploy keycloak
+  shell: |
+    {{ openshift_cli }} process -f {{ che_templates_base }}/multi/keycloak-template.yaml \
+        -p ROUTING_SUFFIX={{ route_suffix }} \
+        -p CHE_KEYCLOAK_ADMIN_REQUIRE_UPDATE_PASSWORD=false \
+        -p KEYCLOAK_USER={{ keycloak_admin_user }} \
+        -p KEYCLOAK_PASSWORD={{ keycloak_admin_pwd }} \
+        -l app=che \
+        -n {{ project_name }} | {{ openshift_cli }} create -f - -n {{ project_name }}
+  ignore_errors: true
+
+- name: wait for keycloak to be running
+  uri:
+    url: http://keycloak-{{ project_name }}.{{ route_suffix }}/auth/realms/che
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 60
+  delay: 30
+
+- name: create persistent volume claim for eclipse che
+  shell: "{{ openshift_cli }} apply -f {{ che_templates_base }}/pvc/che-server-pvc.yaml -n {{ project_name }}"
+  ignore_errors: true
+
+- name: deploy eclipse che
+  shell: |
+    {{ openshift_cli }} process -f {{ che_templates_base }}/che-server-template.yaml \
+          -p ROUTING_SUFFIX={{ route_suffix }} \
+          -p CHE_MULTIUSER=true \
+          -p CHE_VERSION={{ che_version }} \
+          -p CHE_INFRA_OPENSHIFT_PROJECT={{ project_name }} \
+          -p TLS={{ multi_user_che_tls }} \
+          -p WS_PROTOCOL={{ multi_user_che_ws_protocol }} \
+          -p PROTOCOL={{ multi_user_che_protocol }} \
+          -l app=che \
+          -n {{ project_name }} | {{ openshift_cli }} create -f - -n {{ project_name }}
+    {{ openshift_cli }} set volume dc/che --add -m /data --name=che-data-volume --claim-name=che-data-volume -n {{ project_name }}
+    {{ openshift_cli }} set probe dc/che --readiness --initial-delay-seconds=60 --failure-threshold=10 --period-seconds=30 -n {{ project_name }}
+    {{ openshift_cli }} set probe dc/che --liveness --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=30 -n {{ project_name }}
+    {{ openshift_cli }} set resources dc/che --limits=cpu=2,memory=2Gi -n {{ project_name }}
+  ignore_errors: true
+
+- name: set che route as primary
+  shell: "{{ openshift_cli }} annotate route che 'console.alpha.openshift.io/overview-app-route'=true  -n {{ project_name }}"
+  ignore_errors: true
+
+- name: wait for che to be running
+  uri:
+    url: http://che-{{ project_name }}.{{ route_suffix }}/api/system/state
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 60
+  delay: 30
+
+- name: get auth token from keycloak master realm
+  uri:
+    url: http://keycloak-{{ project_name }}.{{ route_suffix }}/auth/realms/master/protocol/openid-connect/token
+    method: POST
+    body: "username={{ keycloak_admin_user }}&password={{ keycloak_admin_pwd }}&grant_type=password&client_id=admin-cli"
+    status_code: 200
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+  register: master_access_token_result
+
+- name: get auth token from keycloak che realm
+  uri:
+    url: http://keycloak-{{ project_name }}.{{ route_suffix }}/auth/realms/che/protocol/openid-connect/token
+    method: POST
+    body: "username={{ keycloak_che_realm_user }}&password={{ keycloak_che_realm_password }}&grant_type=password&client_id=admin-cli"
+    status_code: 200
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+  register: che_access_token_result
+
+- set_fact:
+    master_access_token_bearer: "{{ master_access_token_result.json | json_query('access_token') }}"
+    che_access_token_bearer: "{{ che_access_token_result.json | json_query('access_token') }}"
+
+- include_tasks: add_stack_multi.yml
+  vars:
+    stack_json: "{{ lookup('file','files/default-java-stack.json') }}"
+  when: install_java_oc_stack|bool
+
+- include_tasks: add_stack_multi.yml
+  vars:
+    stack_json: "{{ item }}"
+  loop: "{{ install_custom_stacks_json }}"
+  when:
+    - install_custom_stacks_json is defined
+    - install_custom_stacks_json is not none
+    - install_custom_stacks_json|trim() != ""
+  
+- name: pre-create {{ che_generate_user_count }} users in che realm with format ({{ che_generate_user_format }})
+  uri:
+    url: http://keycloak-{{ project_name }}.{{ route_suffix }}/auth/admin/realms/che/users
+    method: POST
+    body: "{{ lookup('template','che-user.json.j2') }}"
+    body_format: json
+    status_code: 201
+    headers:
+      Authorization: "Bearer {{ master_access_token_bearer }}"
+      Content-Type: "application/json"
+  vars:
+    username: "{{ item }}"
+    first_name: "{{ item }}"
+    last_name: ""
+    email: "{{ item }}@none.com"
+    password: "{{ che_generate_user_password }}"
+  with_sequence: start={{ che_generate_user_count|int if che_generate_user_count|int < 1 else 1}} end={{ che_generate_user_count }} format={{ che_generate_user_format }}
+  when: che_generate_user_count|int > 0

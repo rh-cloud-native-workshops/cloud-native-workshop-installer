@@ -1,0 +1,41 @@
+---
+## Deploy Workshopper Guide
+
+# create project
+- name: check if workshopper project {{ project_name }} exists
+  shell: "{{ openshift_cli }} get project {{ project_name }}"
+  register: workshopper_project_result
+  ignore_errors: true
+  changed_when: false
+
+- name: create workshopper project {{ project_name }}
+  shell: "{{ openshift_cli }} new-project {{ project_name }} --display-name='{{ project_display_name }}' --description='{{ project_desc }}'"
+  when: workshopper_project_result is failed
+
+- name: assign user as project admin
+  shell: "{{ openshift_cli }} adm policy add-role-to-user admin {{ project_admin }} -n {{ project_name }}"
+  ignore_errors: true
+  when:
+    - workshopper_project_result is failed
+    - project_admin is defined
+    - project_admin is not none
+    - project_admin|trim() != ""
+
+- name: annotate workshopper project {{ project_name }}
+  shell: "{{ openshift_cli }} annotate --overwrite namespace {{ project_name }} {{ project_annotations }}"
+  ignore_errors: true
+  when:
+    - workshopper_project_result is failed
+    - project_annotations is defined
+    - project_annotations is not none
+    - project_annotations|trim() != ""
+
+# deploy workshopper guides
+- name: check if workshopper {{ workshopper_name }} exists
+  shell: "{{ openshift_cli }} get service {{ workshopper_name }} -n {{ project_name }}"
+  register: guides_exist_result
+  ignore_errors: true
+  changed_when: false
+
+- import_tasks: deploy.yml
+  when: guides_exist_result is failed

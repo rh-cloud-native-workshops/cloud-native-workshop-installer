@@ -1,0 +1,36 @@
+---
+che_version: latest
+
+che_templates_ref: "{{ 'master' if che_version == 'latest' else che_version }}"
+che_templates_base: https://raw.githubusercontent.com/eclipse/che/{{ che_templates_ref }}/deploy/openshift/templates
+
+project_name: eclipse-che
+project_display_name: Eclipse Che IDE
+project_desc: Eclipse Che IDE
+# project_annotations:
+
+route_suffix: 127.0.0.1.nip.io
+
+multi_user: false
+
+openshift_cli: oc
+openshift_admin_user:
+openshift_admin_pwd:
+
+multi_user_che_tls: false
+multi_user_che_protocol: http
+multi_user_che_ws_protocol: ws
+
+keycloak_admin_user: admin
+keycloak_admin_pwd: admin
+
+keycloak_che_realm_user: admin
+keycloak_che_realm_password: admin
+
+che_generate_user_count: 0
+che_generate_user_format: "user%d"
+che_generate_user_password: password
+
+# url to the custom stack e.g. http://raw.github.com/stack.json
+install_java_oc_stack: false
+install_custom_stacks_json: []

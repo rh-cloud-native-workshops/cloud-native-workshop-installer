@@ -1,0 +1,22 @@
+sonarqube_volume_capacity: 1Gi
+sonarqube_max_memory: 6Gi
+sonarqube_min_memory: 512Mi
+sonarqube_max_cpu: 1
+sonarqube_min_cpu: 200m
+
+sonarqube_service_name: sonarqube
+
+sonarqube_image_version: 7.0
+
+project_name: sonarqube
+project_display_name: sonarqube
+project_desc: Sonarqube Code Quality
+# project_annotations:
+
+openshift_cli: oc
+
+ephemeral: false
+
+current_sonarqube_admin_password: admin123
+sonarqube_admin_user: admin
+sonarqube_admin_password: admin123

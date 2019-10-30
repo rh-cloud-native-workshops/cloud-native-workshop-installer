@@ -1,0 +1,54 @@
+---
+- assert:
+     that: "route_suffix is defined"
+     msg: "route_suffix is a required parameter, you need to provide it"
+
+- debug:
+    msg: 
+      - Provisioning Che 
+      - Version({{ che_version }})
+      - In project({{ project_name }})
+      - Route_suffix({{ route_suffix }})
+      - Multi_user({{ multi_user }})
+      - Install java oc stack({{ install_java_oc_stack }})
+      - Keycloack admin({{ keycloak_admin_user }}/{{ keycloak_admin_pwd }})
+      - Install java oc stack({{ install_java_oc_stack }})
+      - Generate ({{ che_generate_user_count }}) users with format({{che_generate_user_format}}) and password({{che_generate_user_password}})
+     ## Eclipse Che Web IDE Install
+
+- name: check if eclipse che project {{ project_name }} exists
+  shell: "{{ openshift_cli }} get project {{ project_name }}"
+  register: project_result
+  ignore_errors: true
+  changed_when: false
+
+- name: create eclipse che project {{ project_name }}
+  shell: "{{ openshift_cli }} new-project {{ project_name }} --display-name='{{ project_display_name }}' --description='{{ project_desc }}'"
+  when: project_result is failed
+
+- name: assign user as project admin
+  shell: "{{ openshift_cli }} adm policy add-role-to-user admin {{ project_admin }} -n {{ project_name }}"
+  ignore_errors: true
+  when: 
+    - project_result is failed
+    - project_admin is defined
+    - project_admin is not none
+    - project_admin|trim() != ""
+
+- name: annotate eclipse che project {{ project_name }}
+  shell: "{{ openshift_cli }} annotate --overwrite namespace {{ project_name }} {{ project_annotations }}"
+  ignore_errors: true
+  when:
+    - project_result is failed
+    - project_annotations is defined
+    - project_annotations is not none
+    - project_annotations|trim() != ""  
+
+- name: assign che serviceaccount as project admin
+  shell: "{{ openshift_cli }} adm policy add-role-to-user admin system:serviceaccount:{{ project_name }}:che -n {{ project_name }}"
+
+- include_tasks: single_user.yml
+  when: not multi_user|bool
+
+- include_tasks: multi_user.yml
+  when: multi_user|bool

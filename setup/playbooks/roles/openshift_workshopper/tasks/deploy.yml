@@ -1,0 +1,20 @@
+---
+## Deploy Workshopper Guide
+
+- name: deploy workshopper
+  shell: |
+    {{ openshift_cli }} new-app --name={{ workshopper_name }} --docker-image=quay.io/osevg/workshopper:{{ workshopper_image_version }} \
+        -e WORKSHOPS_URLS={{ workshopper_workshop_urls }} \
+        -e CONTENT_URL_PREFIX={{ workshopper_content_url_prefix }} \
+        -n {{ project_name }}
+    {{ openshift_cli }} expose svc/{{ workshopper_name }} -n {{ project_name }}
+
+- name: set workshopper resources
+  shell: "{{ openshift_cli }} set resources dc/{{ workshopper_name }} --limits=cpu={{ max_cpu }},memory={{ max_memory }} --requests=cpu={{ min_cpu }},memory={{ min_memory }} -n {{ project_name }}"
+
+- name: configure workshopper guide env vars
+  shell: "{{ openshift_cli }} set env dc/{{ workshopper_name }} {{ item.key }}={{ item.value }} -n {{ project_name }}"
+  with_dict: "{{ workshopper_env_vars }}"
+
+- name: set workshopper probes
+  shell: "{{ openshift_cli }} set probe dc/{{ workshopper_name }} -n {{ project_name }} --readiness --liveness --get-url=http://:8080/ --failure-threshold=5 --initial-delay-seconds=30"

@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cnw-installer-batch
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      containers:
+      - name: worker
+        image: quay.io/cvicensa/cnw-installer:v0.0.1
+        env:
+        - name: COUNT # In seconds
+          value: "50"
+        - name: KUBECONFIG
+          value: "/tmp/config"
+        command:
+        - sh
+        - -c
+        - >
+          export TOKEN=$(cat /cnw/secret/token) &&
+          echo "TOKEN=${TOKEN}" &&
+          echo "PWD=$(pwd)" &&
+          oc login https://${KUBERNETES_SERVICE_HOST=443}:${KUBERNETES_SERVICE_PORT=443} --token=${TOKEN} --insecure-skip-tls-verify &&
+          ./preparelab_cnw.sh -c ${COUNT}
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: cnw-token-volume
+            mountPath: /cnw/secret
+            readOnly: true
+      volumes:
+      - name: cnw-token-volume
+        secret:
+          secretName: cnw-token-secret
+      restartPolicy: Never

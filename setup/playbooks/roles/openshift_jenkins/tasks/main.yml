@@ -1,0 +1,9 @@
+---
+
+- name: update jenkins templates
+  include_tasks: update_templates.yml
+  when: update_jenkins_templates|bool
+
+- name: deploy jenkins
+  include_tasks: deploy_jenkins.yml
+  when: deploy_jenkins|bool

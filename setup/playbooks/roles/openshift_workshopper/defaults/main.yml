@@ -1,0 +1,19 @@
+---
+project_name: workshopper
+project_display_name: Workshopper
+project_desc: Workshopper Guides
+# project_annotations:
+
+openshift_cli: oc
+
+workshopper_name: guides
+
+workshopper_image_version: latest
+workshopper_workshop_urls: "{{ workshopper_content_url_prefix }}/_workshops/training.yml"
+workshopper_content_url_prefix: https://raw.githubusercontent.com/osevg/workshopper-content/master
+workshopper_env_vars: {}
+
+min_memory: 128Mi
+max_memory: 512Mi
+min_cpu: 0
+max_cpu: 0
