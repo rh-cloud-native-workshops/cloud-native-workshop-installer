@@ -1,0 +1,8 @@
+project_name: etherpad
+project_display_name: ''
+project_desc: ''
+
+etherpad_route_name: etherpad
+
+etherpad_database_size: 4Gi
+etherpad_database_image_version: 5.7

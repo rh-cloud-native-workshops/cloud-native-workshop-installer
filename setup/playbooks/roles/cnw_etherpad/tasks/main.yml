@@ -1,0 +1,75 @@
+---
+## Install
+
+# Create project
+- name: check if etherpad project {{ project_name }} exists
+  shell: "oc get project {{ project_name }}"
+  register: etherpad_project_result
+  ignore_errors: true
+  changed_when: false
+
+- name: create project {{ project_name }}
+  shell: "oc new-project {{ project_name }} --display-name='{{ project_display_name }}' --description='{{ project_desc }}'"
+  when: etherpad_project_result is failed
+
+- name: assign user as project admin
+  shell: "oc adm policy add-role-to-user admin {{ project_admin }} -n {{ project_name }}"
+  ignore_errors: true
+  when:
+    - etherpad_project_result is failed
+    - project_admin is defined
+    - project_admin is not none
+    - project_admin|trim() != ""
+
+- name: annotate project project {{ project_name }}
+  shell: "oc annotate --overwrite namespace {{ project_name }} {{ project_annotations }}"
+  ignore_errors: true
+  when:
+    - etherpad_project_result is failed
+    - project_annotations is defined
+    - project_annotations is not none
+    - project_annotations|trim() != ""
+
+# Deploy Etherpad using an operator
+## Deploy MySQL
+- name: deploy mysql from template (persistent)
+  shell: |
+    oc new-app mysql-persistent \
+        --param MYSQL_USER=ether \
+        --param MYSQL_PASSWORD=ether \
+        --param MYSQL_DATABASE=ether \
+        --param VOLUME_CAPACITY={{ etherpad_database_size }} \
+        --param MYSQL_VERSION={{ etherpad_database_image_version }} \
+        -n {{ project_name }}
+
+- pause:
+    minutes: 1
+
+- name: deploy etherpad from template
+  shell: |
+    oc new-app -f https://raw.githubusercontent.com/wkulhanek/docker-openshift-etherpad/master/etherpad-template.yaml \
+        --param DB_USER=ether \
+        --param DB_PASS=ether \
+        --param DB_DBID=ether \
+        --param DB_PORT=3306 \
+        --param DB_HOST=mysql \
+        --param ADMIN_PASSWORD=secret \
+        -n {{ project_name }}
+
+# Checking status of services
+- name: get etherpad route
+  shell: "oc get route {{ etherpad_route_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
+  register: etherpad_route_output
+  changed_when: false
+
+- set_fact:
+    etherpad_route: "{{ etherpad_route_output.stdout }}"
+
+- name: wait for etherpad to be running
+  uri:
+    url: http://{{ etherpad_route }}
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 30
+  delay: 30

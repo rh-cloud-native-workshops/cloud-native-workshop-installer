@@ -146,3 +146,10 @@
     vars:
       project_name: "{{ monitoring_namespace }}"
     tags: monitoring
+
+  # deploy etherpad
+  - import_role:
+      name: cnw_etherpad
+    vars:
+      project_name: "{{ etherpad_namespace }}"
+    tags: etherpad

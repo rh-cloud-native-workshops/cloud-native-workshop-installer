@@ -30,21 +30,22 @@
     - project_annotations is not none
     - project_annotations|trim() != ""
 
-# Deploy Prometheus using an operator
-- name: Create Operator Group for the Prometheus operator
+# Create the operator group for the namespace
+- name: Create Operator Group
   k8s:
     state: present
     definition:
       apiVersion: operators.coreos.com/v1
       kind: OperatorGroup
       metadata:
-        name: "prometheus-operator-group"
+        name: "monitoring-operator-group"
         generation: 1
         namespace: "{{ project_name }}"
       spec:
         targetNamespaces:
         - "{{ project_name }}"
 
+# Deploy Prometheus using an operator
 - name: Create a Subscription of the Prometheus operator
   k8s:
     state: present
@@ -173,30 +174,124 @@
       metadata:
         labels:
           operated-prometheus: "true"
-        name: prometheus-operated
+        name: "{{ prometheus_route_name }}"
         namespace: "{{ project_name }}"
       spec:
         port:
           targetPort: web
         to:
           kind: Service
-          name: prometheus-operated
+          name: "{{ prometheus_service_name }}"
           weight: 100
         wildcardPolicy: None
 
-#- name: get prometheus route
-#  shell: "{{ openshift_cli }} get route {{ prometheus_service_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
-#  register: prometheus_route_output
-#  changed_when: false
 
-#- set_fact:
-#    prometheus_route: "{{ prometheus_route_output.stdout }}"
+# Deploy Grafana using an operator
+- name: Create a Subscription of the Grafana operator
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: grafana
+        namespace: "{{ project_name }}"
+      spec:
+        channel: "{{ grafana_subsription_channel }}"
+        installPlanApproval: "{{ grafana_subsription_install_plan_approval }}"
+        name: "{{ grafana_subsription_name }}"
+        source: "{{ grafana_subsription_source }}"
+        sourceNamespace: "{{ grafana_subsription_source_namespace }}"
+        startingCSV: "{{ grafana_subsription_starting_csv }}"
 
-#- name: wait for prometheus to be running
-#  uri:
-#    url: http://{{ prometheus_route }}
-#    status_code: 200
-#  register: result
-#  until: result.status == 200
-#  retries: 30
-#  delay: 30
+- name: Create a Grafana Server CR
+  k8s:
+    state: present
+    definition:
+      apiVersion: integreatly.org/v1alpha1
+      kind: Grafana
+      metadata:
+        name: grafana
+        namespace: "{{ project_name }}"
+      spec:
+        ingress:
+          enabled: true
+        config:
+          auth:
+            disable_signout_menu: true
+          auth.anonymous:
+            enabled: true
+          log:
+            level: warn
+            mode: console
+          security:
+            admin_password: secret
+            admin_user: root
+        dashboardLabelSelector:
+          - matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - grafana
+
+- name: Create a Grafana Server CR
+  k8s:
+    state: present
+    definition:
+      apiVersion: integreatly.org/v1alpha1
+      kind: GrafanaDataSource
+      metadata:
+        finalizers:
+          - grafana.cleanup
+        name: prometheus-datasource
+        namespace: "{{ project_name }}"
+      spec:
+        datasources:
+          - access: proxy
+            editable: true
+            isDefault: true
+            jsonData:
+              timeInterval: 5s
+            name: Prometheus
+            type: prometheus
+            url: 'http://prometheus-operated:9090'
+            version: 1
+        name: prometheus-datasource.yaml
+
+# Checking status of services
+- name: get prometheus route
+  shell: "oc get route {{ prometheus_route_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
+  register: prometheus_route_output
+  changed_when: false
+
+- set_fact:
+    prometheus_route: "{{ prometheus_route_output.stdout }}"
+
+- name: wait for prometheus to be running
+  uri:
+    url: http://{{ prometheus_route }}
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 30
+  delay: 30
+
+- name: get grafana route
+  shell: "oc get route {{ grafana_route_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
+  register: grafana_route_output
+  changed_when: false
+
+- set_fact:
+    grafana_route: "{{ grafana_route_output.stdout }}"
+
+- pause:
+    minutes: 2
+
+- name: wait for grafana to be running
+  uri:
+    url: https://{{ grafana_route }}
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 30
+  delay: 30
