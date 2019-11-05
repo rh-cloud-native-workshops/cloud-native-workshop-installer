@@ -1,0 +1,107 @@
+---
+## Install
+
+# Create project
+- name: check if workspaces project {{ project_name }} exists
+  shell: "oc get project {{ project_name }}"
+  register: workspaces_project_result
+  ignore_errors: true
+  changed_when: false
+
+- name: create project {{ project_name }}
+  shell: "oc new-project {{ project_name }} --display-name='{{ project_display_name }}' --description='{{ project_desc }}'"
+  when: workspaces_project_result is failed
+
+- name: assign user as project admin
+  shell: "oc adm policy add-role-to-user admin {{ project_admin }} -n {{ project_name }}"
+  ignore_errors: true
+  when:
+    - workspaces_project_result is failed
+    - project_admin is defined
+    - project_admin is not none
+    - project_admin|trim() != ""
+
+- name: annotate project project {{ project_name }}
+  shell: "oc annotate --overwrite namespace {{ project_name }} {{ project_annotations }}"
+  ignore_errors: true
+  when:
+    - workspaces_project_result is failed
+    - project_annotations is defined
+    - project_annotations is not none
+    - project_annotations|trim() != ""
+
+# Create the operator group for the namespace
+- name: Create Operator Group
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1
+      kind: OperatorGroup
+      metadata:
+        name: "workspaces-operator-group"
+        generation: 1
+        namespace: "{{ project_name }}"
+      spec:
+        targetNamespaces:
+        - "{{ project_name }}"
+
+# Deploy workspaces using an operator
+- name: Create a Subscription of the workspaces operator
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: workspaces
+        namespace: "{{ project_name }}"
+      spec:
+        channel: "{{ workspaces_subsription_channel }}"
+        installPlanApproval: "{{ workspaces_subsription_install_plan_approval }}"
+        name: "{{ workspaces_subsription_name }}"
+        source: "{{ workspaces_subsription_source }}"
+        sourceNamespace: "{{ workspaces_subsription_source_namespace }}"
+        startingCSV: "{{ workspaces_subsription_starting_csv }}"
+
+- name: Create a Che Cluster CR
+  k8s:
+    state: present
+    definition:
+      apiVersion: org.eclipse.che/v1
+      kind: CheCluster
+      metadata:
+        name: eclipse-che
+        namespace: "{{ project_name }}"
+      spec:
+        server:
+          cheImageTag: ''
+          devfileRegistryImage: ''
+          pluginRegistryImage: ''
+          tlsSupport: "{{ tls_support }}"
+          selfSignedCert: false
+        database:
+          externalDb: false
+          chePostgresHostname: ''
+          chePostgresPort: ''
+          chePostgresUser: ''
+          chePostgresPassword: ''
+          chePostgresDb: ''
+        auth:
+          openShiftoAuth: true
+          identityProviderImage: ''
+          externalIdentityProvider: false
+          identityProviderURL: ''
+          identityProviderRealm: ''
+          identityProviderClientId: ''
+        storage:
+          pvcStrategy: per-workspace
+          pvcClaimSize: 1Gi
+          preCreateSubPaths: true
+
+# Checking status of the operator
+- name: wait for workspaces csv to be ready
+  shell: "oc get csv/{{ workspaces_subsription_starting_csv }} -o jsonpath='{.status.phase}' -n {{ project_name }}"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30

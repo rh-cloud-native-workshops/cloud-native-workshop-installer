@@ -30,20 +30,45 @@
     - project_annotations is not none
     - project_annotations|trim() != ""
 
+# Check if etherpad exists
+- name: check if {{ etherpad_database_service_name }} exists
+  shell: "oc get service {{ etherpad_database_service_name }} -n {{ project_name }}"
+  register: install_etherpad_database
+  ignore_errors: true
+  changed_when: false
+- name: check if {{ etherpad_service_name }} exists
+  shell: "oc get service {{ etherpad_service_name }} -n {{ project_name }}"
+  register: install_etherpad
+  ignore_errors: true
+  changed_when: false
+
 # Deploy Etherpad using an operator
-## Deploy MySQL
+- name: remove existing {{ install_etherpad_database }} if clean deploy requested
+  shell: "oc delete all,cm,pvc -l app={{ etherpad_database_template_name }} -n {{ project_name }}"
+  when: 
+    - install_etherpad_database|succeeded 
+    - clean_deploy|bool
+
 - name: deploy mysql from template (persistent)
   shell: |
-    oc new-app mysql-persistent \
+    oc new-app {{ etherpad_database_template_name }} \
         --param MYSQL_USER=ether \
         --param MYSQL_PASSWORD=ether \
         --param MYSQL_DATABASE=ether \
         --param VOLUME_CAPACITY={{ etherpad_database_size }} \
         --param MYSQL_VERSION={{ etherpad_database_image_version }} \
         -n {{ project_name }}
+  when: clean_deploy|bool or install_etherpad_database|failed
 
 - pause:
     minutes: 1
+  when: clean_deploy|bool or install_etherpad_database|failed
+
+- name: remove existing {{ install_etherpad }} if clean deploy requested
+  shell: "oc delete all,cm,pvc -l app={{ etherpad_service_name }} -n {{ project_name }}"
+  when: 
+    - install_etherpad|succeeded 
+    - clean_deploy|bool
 
 - name: deploy etherpad from template
   shell: |
@@ -55,6 +80,7 @@
         --param DB_HOST=mysql \
         --param ADMIN_PASSWORD=secret \
         -n {{ project_name }}
+  when: clean_deploy|bool or install_etherpad|failed
 
 # Checking status of services
 - name: get etherpad route

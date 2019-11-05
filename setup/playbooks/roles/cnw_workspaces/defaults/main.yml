@@ -1,0 +1,15 @@
+project_name: crw
+project_display_name: ''
+project_desc: ''
+
+tls_support: true
+
+workspaces_service_name: prometheus-operated
+workspaces_route_name: prometheus-route
+
+workspaces_subsription_channel: stable
+workspaces_subsription_install_plan_approval: Automatic
+workspaces_subsription_name: eclipse-che
+workspaces_subsription_source: community-operators
+workspaces_subsription_source_namespace: openshift-marketplace
+workspaces_subsription_starting_csv: eclipse-che.v7.3.0

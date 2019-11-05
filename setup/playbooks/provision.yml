@@ -153,3 +153,10 @@
     vars:
       project_name: "{{ etherpad_namespace }}"
     tags: etherpad
+
+  # deploy code ready workspaces
+  - import_role:
+      name: cnw_workspaces
+    vars:
+      project_name: "{{ workspaces_namespace }}"
+    tags: code-ready-workspaces

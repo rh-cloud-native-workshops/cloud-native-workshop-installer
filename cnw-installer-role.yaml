@@ -54,3 +54,9 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - org.eclipse.che
+  resources:
+  - '*'
+  verbs:
+  - '*'
