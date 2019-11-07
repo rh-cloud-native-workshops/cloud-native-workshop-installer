@@ -25,22 +25,6 @@
   - role: ansibleplaybookbundle.asb-modules
 
   tasks:    
-#  - name: login as super user with token
-#    shell: "oc login --token={{ openshift_token }} --insecure-skip-tls-verify=true"
-#    when:
-#      - openshift_token is defined
-#      - openshift_token is not none
-#      - openshift_token|trim() != ""
-#    tags: always
-#
-#  - name: login as super user with pwd
-#    shell: "oc login -u {{ openshift_user }} -p {{ openshift_password }} --insecure-skip-tls-verify=true"
-#    when: >
-#      openshift_token is not defined or
-#      openshift_token is none or
-#      openshift_token|trim() == ""
-#    tags: always  
-  
   - name: extract app route suffix from openshift-console
     block:
       - shell: "oc get route console -n openshift-console -o 'jsonpath={.spec.host}'"
