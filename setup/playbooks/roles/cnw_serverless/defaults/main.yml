@@ -1,0 +1,23 @@
+project_name: serverless
+project_display_name: ''
+project_desc: ''
+
+all_namespaces_project_name: openshift-operators
+
+serverless_subsription_channel: techpreview
+serverless_subsription_install_plan_approval: Automatic
+serverless_subsription_name: serverless-operator
+serverless_subsription_source: redhat-operators
+serverless_subsription_source_namespace: openshift-marketplace
+serverless_subsription_starting_csv: serverless-operator.v1.1.0
+
+serverless_subsription_csv_root: serverless-operator.v1
+
+servicemesh_subsription_channel: '1.0'
+servicemesh_subsription_install_plan_approval: Automatic
+servicemesh_subsription_name: servicemeshoperator
+servicemesh_subsription_source: redhat-operators
+servicemesh_subsription_source_namespace: openshift-marketplace
+servicemesh_subsription_starting_csv: servicemeshoperator.v1.0.1
+
+servicemesh_subsription_csv_root: servicemeshoperator.v1

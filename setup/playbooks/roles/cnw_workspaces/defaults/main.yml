@@ -12,4 +12,6 @@ workspaces_subsription_install_plan_approval: Automatic
 workspaces_subsription_name: eclipse-che
 workspaces_subsription_source: community-operators
 workspaces_subsription_source_namespace: openshift-marketplace
-workspaces_subsription_starting_csv: eclipse-che.v7.3.0
+workspaces_subsription_starting_csv: eclipse-che.v7.3.1
+
+workspaces_subsription_csv_root: eclipse-che.v7

@@ -1,0 +1,28 @@
+---
+## Install
+
+# Deploy Prometheus using an operator
+- name: Create a Subscription of the OpenShift Pipelines operator
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: "{{ pipelines_subsription_name }}"
+        namespace: "{{ all_namespaces_project_name }}"
+      spec:
+        channel: "{{ pipelines_subsription_channel }}"
+        installPlanApproval: "{{ pipelines_subsription_install_plan_approval }}"
+        name: "{{ pipelines_subsription_name }}"
+        source: "{{ pipelines_subsription_source }}"
+        sourceNamespace: "{{ pipelines_subsription_source_namespace }}"
+        startingCSV: "{{ pipelines_subsription_starting_csv }}"
+
+# Checking status of the operator
+- name: wait for pipelines csv to be ready
+  shell: "oc get csv -o json -n {{ all_namespaces_project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ pipelines_subsription_csv_root }}\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30

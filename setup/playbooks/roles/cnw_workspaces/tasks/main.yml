@@ -100,7 +100,7 @@
 
 # Checking status of the operator
 - name: wait for workspaces csv to be ready
-  shell: "oc get csv/{{ workspaces_subsription_starting_csv }} -o jsonpath='{.status.phase}' -n {{ project_name }}"
+  shell: "oc get csv -o json -n {{ project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ workspaces_subsription_csv_root }}\")) | .status.phase'"
   register: result
   until: result.stdout == 'Succeeded'
   retries: 30

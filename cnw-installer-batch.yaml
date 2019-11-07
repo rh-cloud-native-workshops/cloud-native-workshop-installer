@@ -11,6 +11,8 @@ spec:
       - name: worker
         image: quay.io/cvicensa/cnw-installer:v0.0.1
         env:
+        - name: GUIDE_NAME
+          value: "_cloud-native-workshop-maven.yml"
         - name: COUNT # In seconds
           value: "50"
         - name: KUBECONFIG
@@ -18,19 +20,6 @@ spec:
         command:
         - sh
         - -c
-        - >
-          export TOKEN=$(cat /cnw/secret/token) &&
-          echo "TOKEN=${TOKEN}" &&
-          echo "PWD=$(pwd)" &&
-          oc login https://${KUBERNETES_SERVICE_HOST=443}:${KUBERNETES_SERVICE_PORT=443} --token=${TOKEN} --insecure-skip-tls-verify &&
-          ./preparelab_cnw.sh -c ${COUNT}
+        - ./preparelab_cnw.sh -g ${GUIDE_NAME} -c ${COUNT}
         imagePullPolicy: Always
-        volumeMounts:
-          - name: cnw-token-volume
-            mountPath: /cnw/secret
-            readOnly: true
-      volumes:
-      - name: cnw-token-volume
-        secret:
-          secretName: cnw-token-secret
       restartPolicy: Never

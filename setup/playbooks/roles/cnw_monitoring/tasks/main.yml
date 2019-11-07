@@ -63,6 +63,13 @@
         sourceNamespace: "{{ prometheus_subsription_source_namespace }}"
         startingCSV: "{{ prometheus_subsription_starting_csv }}"
 
+- name: wait for prometheus csv to be ready
+  shell: "oc get csv -o json -n {{ project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ prometheus_subsription_csv_root }}\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30
+
 - name: Create a Prometheus Server CR
   k8s:
     state: present
@@ -203,6 +210,13 @@
         source: "{{ grafana_subsription_source }}"
         sourceNamespace: "{{ grafana_subsription_source_namespace }}"
         startingCSV: "{{ grafana_subsription_starting_csv }}"
+
+- name: wait for grafana csv to be ready
+  shell: "oc get csv -o json -n {{ project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ grafana_subsription_csv_root }}\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30
 
 - name: Create a Grafana Server CR
   k8s:

@@ -12,6 +12,8 @@ prometheus_subsription_source: community-operators
 prometheus_subsription_source_namespace: openshift-marketplace
 prometheus_subsription_starting_csv: prometheusoperator.0.32.0
 
+prometheus_subsription_csv_root: prometheusoperator
+
 grafana_service_name: grafana-service
 grafana_route_name: grafana-route
 
@@ -21,3 +23,5 @@ grafana_subsription_name: grafana-operator
 grafana_subsription_source: community-operators
 grafana_subsription_source_namespace: openshift-marketplace
 grafana_subsription_starting_csv: grafana-operator.v2.0.0
+
+grafana_subsription_csv_root: grafana-operator
