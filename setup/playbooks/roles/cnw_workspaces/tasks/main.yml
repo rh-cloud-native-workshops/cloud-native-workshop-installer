@@ -63,6 +63,15 @@
         sourceNamespace: "{{ workspaces_subsription_source_namespace }}"
         startingCSV: "{{ workspaces_subsription_starting_csv }}"
 
+# Checking status of the operator
+- name: wait for workspaces csv to be ready
+  shell: "oc get csv -o json -n {{ project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ workspaces_subsription_csv_root }}\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30
+
+# Create a cluster
 - name: Create a Che Cluster CR
   k8s:
     state: present
@@ -97,11 +106,3 @@
           pvcStrategy: per-workspace
           pvcClaimSize: 1Gi
           preCreateSubPaths: true
-
-# Checking status of the operator
-- name: wait for workspaces csv to be ready
-  shell: "oc get csv -o json -n {{ project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ workspaces_subsription_csv_root }}\")) | .status.phase'"
-  register: result
-  until: result.stdout == 'Succeeded'
-  retries: 30
-  delay: 30
