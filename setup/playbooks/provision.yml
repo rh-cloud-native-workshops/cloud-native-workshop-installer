@@ -142,3 +142,8 @@
     vars:
       project_name: "{{ knative_namespace }}"
     tags: knative
+  
+  # deploy logging
+  - import_role:
+      name: cnw_logging
+    tags: logging
