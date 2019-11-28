@@ -1,0 +1,188 @@
+---
+## Install
+
+# Create Logging related namespaces
+- name: Create openshift-operators-redhat namespace
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: openshift-operators-redhat
+        annotations:
+          openshift.io/node-selector: ""
+        labels:
+          openshift.io/cluster-logging: "true"
+          openshift.io/cluster-monitoring: "true"
+
+- name: Create openshift-logging namespace
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: openshift-logging
+        annotations:
+          openshift.io/node-selector: "" 
+        labels:
+          openshift.io/cluster-logging: "true"
+          openshift.io/cluster-monitoring: "true"
+
+- name: Create Operator Group for namespace openshift-operators-redhat
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1
+      kind: OperatorGroup
+      metadata:
+        name: openshift-operators-redhat
+        namespace: openshift-operators-redhat
+      spec: {}
+
+- name: Create Operator Group for namespace openshift-logging
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1
+      kind: OperatorGroup
+      metadata:
+        name: openshift-logging
+        namespace: openshift-logging
+      spec:
+        targetNamespaces:
+        - "openshift-logging"
+
+# Get Elastic Operator channel
+- name: Get channel for elasticsearch-operator
+  shell: "oc get packagemanifest elasticsearch-operator -n openshift-marketplace -o jsonpath='{.status.channels[].name}'"
+  register: channel_eo
+
+# Creating Subscription for Elasticsearch Operator
+- name: Creating Subscription for Operator Elasticsearch
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: "elasticsearch"
+        namespace: "openshift-operators-redhat" 
+      spec:
+        channel: "{{ channel_eo.stdout }}"
+        installPlanApproval: "Automatic"
+        source: "redhat-operators"
+        sourceNamespace: "openshift-marketplace"
+        name: "elasticsearch-operator"
+
+# Checking status of the Elasticsearch Operator
+- name: wait for elasticsearch-operator csv to be ready
+  shell: "oc get csv -o json -n openshift-logging | jq -r '.items[] | select(.metadata.name | contains(\"elasticsearch-operator\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30
+
+# Adding RBAC related assets
+- name: Creating Role prometheus-k8s in openshift-operators-redhat
+  k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata:
+        name: prometheus-k8s
+        namespace: openshift-operators-redhat
+      rules:
+      - apiGroups:
+        - ""
+        resources:
+        - services
+        - endpoints
+        - pods
+        verbs:
+        - get
+        - list
+        - watch
+
+- name: Creating Role Binding prometheus-k8s in openshift-operators-redhat
+  k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: prometheus-k8s
+        namespace: openshift-operators-redhat
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: Role
+        name: prometheus-k8s
+      subjects:
+      - kind: ServiceAccount
+        name: prometheus-k8s
+      namespace: openshift-operators-redhat
+
+# Get Cluster Logging Operator channel
+- name: Get channel for cluster-logging
+  shell: "oc get packagemanifest cluster-logging -n openshift-marketplace -o jsonpath='{.status.channels[].name}'"
+  register: channel_clo
+
+# Creating Subscription for Operator Cluster Logging
+- name: Creating Subscription for Operator Cluster Logging
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: cluster-logging
+        namespace: openshift-logging
+      spec:
+        channel: "{{ channel_clo.stdout }}"
+        name: cluster-logging
+        source: redhat-operators
+        sourceNamespace: openshift-marketplace
+        startingCSV: clusterlogging.4.2.8-201911190952
+
+# Creating Cluster Logging Instance
+- name: Creating Cluster Logging Instance
+  k8s:
+    state: present
+    definition:
+      apiVersion: logging.openshift.io/v1
+      kind: ClusterLogging
+      metadata:
+        name: instance 
+        namespace: openshift-logging
+      spec:
+        managementState: Managed
+        logStore:
+          type: elasticsearch  
+          elasticsearch:
+            nodeCount: 3 
+            storage:
+              storageClassName: gp2
+              size: 200G
+            redundancyPolicy: SingleRedundancy
+        visualization:
+          type: kibana
+          kibana:
+            replicas: 1
+        curation:
+          type: curator  
+          curator:
+            schedule: "30 3 * * *"
+        collection:
+          logs:
+            type: fluentd  
+            fluentd: {}
+
+# Checking status of the Cluster Logging Operator
+- name: wait for clusterlogging csv to be ready
+  shell: "oc get csv -o json -n openshift-logging | jq -r '.items[] | select(.metadata.name | contains(\"clusterlogging\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30
