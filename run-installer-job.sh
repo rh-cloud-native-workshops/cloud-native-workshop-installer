@@ -12,12 +12,6 @@ fi
 
 oc new-project ${NAMESPACE}
 
-#oc delete secret cnw-token-secret -n ${NAMESPACE}
-
-#cat ./cnw-token-secret.yaml | \
-#  sed "s/{{\s*NAMESPACE\s*}}/$(echo -n ${NAMESPACE} | base64)/" | \
-#  sed "s/{{\s*TOKEN\s*}}/${TOKEN}/" | oc create -n ${NAMESPACE} -f -
-
 oc apply -n ${NAMESPACE} -f ./cnw-installer-role.yaml
 oc apply -n ${NAMESPACE} -f ./cnw-installer-service-account.yaml
 
