@@ -66,3 +66,17 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - packages.operators.coreos.com
+  resources:
+  - '*'
+  verbs:
+  - 'get'
+- apiGroups:
+  - logging.openshift.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+
+  
