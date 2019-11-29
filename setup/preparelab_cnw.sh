@@ -1,7 +1,7 @@
 #!/bin/sh
 MYDIR="$( cd "$(dirname "$0")" ; pwd -P )"
 function usage() {
-    echo "usage: $(basename $0) [-g/--guide -c/--count usercount -n/--namespace infra-namespace -m/--monitoring -e/--etherpad -w/--workspaces -s/--serverless]"
+    echo "usage: $(basename $0) [-g/--guide -c/--count usercount -n/--namespace infra-namespace -m/--monitoring -e/--etherpad -w/--workspaces -s/--serverless -l/--launcher]"
 }
 
 # Defaults
@@ -12,6 +12,7 @@ MONITORING_NAMESPACE="lab-monitoring"
 ETHERPAD_NAMESPACE="lab-etherpad"
 WORKSPACES_NAMESPACE="lab-workspaces"
 SERVERLESS_NAMESPACE="lab-serverless"
+LAUNCHER_NAMESPACE="lab-launcher"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -49,6 +50,16 @@ case $key in
     shift # past argument
     shift # past value
     ;;
+    -s|--serverless)
+    SERVERLESS_NAMESPACE="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -l|--launcher)
+    LAUNCHER_NAMESPACE="$2"
+    shift # past argument
+    shift # past value
+    ;;
     *)    # unknown option
     echo "Unknown option: $key"
     usage
@@ -69,6 +80,7 @@ ansible-playbook -vvv playbooks/provision.yml \
     -e etherpad_namespace=${ETHERPAD_NAMESPACE} \
     -e workspaces_namespace=${WORKSPACES_NAMESPACE} \
     -e serverless_namespace=${SERVERLESS_NAMESPACE} \
+    -e launcher_namespace=${LAUNCHER_NAMESPACE} \
     -e openshift_token=$(oc whoami -t) \
     -e openshift_master_url=$(oc whoami --show-server) \
     -e openshift_user_password='openshift' \

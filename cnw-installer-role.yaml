@@ -13,12 +13,9 @@ rules:
   - events
   - configmaps
   - secrets
-  verbs:
-  - '*'
-- apiGroups:
-  - ""
-  resources:
   - namespaces
+  - limitranges
+  - serviceaccounts 
   verbs:
   - '*'
 - apiGroups:
@@ -78,5 +75,18 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - '*'
+- apiGroups:
+  - launcher.fabric8.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+
 
   

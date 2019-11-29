@@ -1,0 +1,11 @@
+project_name: launcher
+project_display_name: ''
+project_desc: ''
+
+tls_support: true
+
+launcher_service_name: launcher-application
+launcher_route_name: launcher
+
+console_url: ""
+oauth_url: ""

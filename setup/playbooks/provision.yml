@@ -30,7 +30,16 @@
       - shell: "oc get route console -n openshift-console -o 'jsonpath={.spec.host}'"
         register: console_route
       - set_fact:
+          console_url: "https://{{ console_route.stdout }}"
           apps_hostname_suffix: "{{ console_route.stdout |regex_replace('^console-openshift-console\\.(.*)$', '\\1') }}"
+    tags: always
+
+  - name: extract oauth route
+    block:
+      - shell: "oc get route oauth-openshift -n openshift-authentication -o 'jsonpath={.spec.host}'"
+        register: oauth_route
+      - set_fact:
+          oauth_url: "https://{{ oauth_route.stdout }}"
     tags: always
 
   - name: delete project quota
@@ -147,3 +156,12 @@
   - import_role:
       name: cnw_logging
     tags: logging
+
+  # deploy launcher
+  - import_role:
+      name: cnw_launcher
+    vars:
+      project_name: "{{ launcher_namespace }}"
+      console_url: "{{ console_url }}"
+      oauth_url: "{{ oauth_url }}"
+    tags: launcher
