@@ -146,6 +146,14 @@
         sourceNamespace: openshift-marketplace
         startingCSV: clusterlogging.4.2.8-201911190952
 
+# Checking status of the Cluster Logging Operator
+- name: wait for clusterlogging csv to be ready
+  shell: "oc get csv -o json -n openshift-logging | jq -r '.items[] | select(.metadata.name | contains(\"clusterlogging\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30
+  
 # Creating Cluster Logging Instance
 - name: Creating Cluster Logging Instance
   k8s:
@@ -159,7 +167,7 @@
       spec:
         managementState: Managed
         logStore:
-          type: elasticsearch  
+          type: elasticsearch
           elasticsearch:
             nodeCount: 3 
             storage:
@@ -178,11 +186,3 @@
           logs:
             type: fluentd  
             fluentd: {}
-
-# Checking status of the Cluster Logging Operator
-- name: wait for clusterlogging csv to be ready
-  shell: "oc get csv -o json -n openshift-logging | jq -r '.items[] | select(.metadata.name | contains(\"clusterlogging\")) | .status.phase'"
-  register: result
-  until: result.stdout == 'Succeeded'
-  retries: 30
-  delay: 30

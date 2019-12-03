@@ -147,10 +147,8 @@
 
   # deploy serverless
   - import_role:
-      name: cnw_knative
-    vars:
-      project_name: "{{ knative_namespace }}"
-    tags: knative
+      name: cnw_serverless
+    tags: serverless
   
   # deploy logging
   - import_role:

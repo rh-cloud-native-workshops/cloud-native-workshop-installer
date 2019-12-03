@@ -3,7 +3,7 @@ dependencies: []
 allow_duplicates: true
 
 galaxy_info:
-  role_name: cnw_monitoring
+  role_name: cnw_serverless
   author: Carlos Vicens
   description: OpenShift Serverless for CNW
   company: "Red Hat"

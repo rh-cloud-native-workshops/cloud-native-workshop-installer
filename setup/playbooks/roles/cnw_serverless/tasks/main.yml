@@ -1,92 +1,6 @@
 ---
 ## Install
-
-# Deploy Service Mesh using an operator
-- name: Create a Subscription of the OpenShift Service Mesh operator
-  k8s:
-    state: present
-    definition:
-      apiVersion: operators.coreos.com/v1alpha1
-      kind: Subscription
-      metadata:
-        name: "{{ servicemesh_subsription_name }}"
-        namespace: "{{ all_namespaces_project_name }}"
-      spec:
-        channel: "{{ servicemesh_subsription_channel }}"
-        installPlanApproval: "{{ servicemesh_subsription_install_plan_approval }}"
-        name: "{{ servicemesh_subsription_name }}"
-        source: "{{ servicemesh_subsription_source }}"
-        sourceNamespace: "{{ servicemesh_subsription_source_namespace }}"
-        startingCSV: "{{ servicemesh_subsription_starting_csv }}"
-
-- name: wait for servicemesh csv to be ready
-  shell: "oc get csv -o json -n {{ all_namespaces_project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ servicemesh_subsription_csv_root }}\")) | .status.phase'"
-  register: result
-  until: result.stdout == 'Succeeded'
-  retries: 30
-  delay: 30
-
-- name: Create a Control Plane for the OpenShift Serverless operator
-  k8s:
-    state: present
-    definition:
-      apiVersion: maistra.io/v1
-      kind: ServiceMeshControlPlane
-      metadata:
-        name: basic-install
-        namespace: "{{ project_name }}"
-      spec:
-        istio:
-          global:
-            proxy:
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 128Mi
-                limits:
-                  cpu: 500m
-                  memory: 128Mi
-          gateways:
-            istio-egressgateway:
-              autoscaleEnabled: false
-            istio-ingressgateway:
-              autoscaleEnabled: false
-          mixer:
-            policy:
-              autoscaleEnabled: false
-            telemetry:
-              autoscaleEnabled: false
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 1G
-                limits:
-                  cpu: 500m
-                  memory: 4G
-          pilot:
-            autoscaleEnabled: false
-            traceSampling: 100
-          kiali:
-            enabled: true
-          grafana:
-            enabled: true
-          tracing:
-            enabled: true
-            jaeger:
-              template: all-in-one
-
-- name: Create a Control Plane for the OpenShift Serverless operator
-  k8s:
-    state: present
-    definition:
-      apiVersion: maistra.io/v1
-      kind: ServiceMeshMemberRoll
-      metadata:
-        name: default
-        namespace: "{{ project_name }}"
-      spec:
-        members:
-          - coolstore-user1
+## Document: https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html-single/serverless_applications/index#installing-openshift-serverless
 
 # Deploy Serverless using an operator
 - name: Create a Subscription of the OpenShift Serverless operator
@@ -106,7 +20,26 @@
         sourceNamespace: "{{ serverless_subsription_source_namespace }}"
         startingCSV: "{{ serverless_subsription_starting_csv }}"
 
-- name: Create a KNative Serving instance for the OpenShift Serverless operator
+# Checking status of the operator
+- name: wait for serverless csv to be ready
+  shell: "oc get csv -o json -n {{ all_namespaces_project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ serverless_subsription_csv_root }}\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30
+
+# Create Knative Serving namespace
+- name: Create Knative Serving namespace
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: knative-serving
+
+# Create a Knative Serving instance
+- name: Create a Knative Serving instance for the OpenShift Serverless operator
   k8s:
     state: present
     definition:
@@ -114,7 +47,7 @@
       kind: KnativeServing
       metadata:
         name: knative-serving
-        namespace: "{{ project_name }}"
+        namespace: knative-serving
       spec:
         config:
           autoscaler:
@@ -151,14 +84,47 @@
             logging.enable-var-log-collection: 'false'
             metrics.backend-destination: prometheus
           tracing:
-            enable: 'false'
+            backend: none
             sample-rate: '0.1'
 
+# Wait for knative serving to be ready 
+- name: Wait for knative serving to be ready
+  shell: "oc get knativeserving/knative-serving -n knative-serving --template={% raw %}'{{range .status.conditions}}{{if and (eq .type \"Ready\") (eq .status \"True\") }}Ready{{end}}{{end}}'{% endraw %}"
+  register: result
+  until: result.stdout == 'Ready'
+  retries: 30
+  delay: 30
+
+# Deploy Knative Eventing using an operator
+- name: Create a Subscription of the Knative Eventing operator
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: "{{ knative_eventing_subsription_name }}"
+        namespace: "{{ all_namespaces_project_name }}"
+      spec:
+        channel: "{{ knative_eventing_subsription_channel }}"
+        installPlanApproval: "{{ knative_eventing_subsription_install_plan_approval }}"
+        name: "{{ knative_eventing_subsription_name }}"
+        source: "{{ knative_eventing_subsription_source }}"
+        sourceNamespace: "{{ knative_eventing_subsription_source_namespace }}"
+        startingCSV: "{{ knative_eventing_subsription_starting_csv }}"
 
 # Checking status of the operator
-- name: wait for serverless csv to be ready
-  shell: "oc get csv -o json -n {{ all_namespaces_project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ serverless_subsription_csv_root }}\")) | .status.phase'"
+- name: wait for knative eventing csv to be ready
+  shell: "oc get csv -o json -n {{ all_namespaces_project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ knative_eventing_subsription_csv_root }}\")) | .status.phase'"
   register: result
   until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30
+
+# Wait for knative eventing to be ready 
+- name: Wait for knative eventing to be ready
+  shell: "oc get knativeeventing/knative-eventing -n knative-eventing --template={% raw %}'{{range .status.conditions}}{{if and (eq .type \"Ready\") (eq .status \"True\") }}Ready{{end}}{{end}}'{% endraw %}"
+  register: result
+  until: result.stdout == 'Ready'
   retries: 30
   delay: 30

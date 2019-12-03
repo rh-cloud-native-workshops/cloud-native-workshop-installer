@@ -1,5 +1,6 @@
 ---
 ## Install
+## Docs: https://launcher.fabric8.io/docs/minishift-installation.html
 
 # Create project
 - name: check if launcher project {{ project_name }} exists
@@ -225,11 +226,11 @@
         git:
           providers:
           - id: GitHub
-            clientId: "12"
-            clientSecret: "12"
+            clientId: "12"     # 12 dummy value
+            clientSecret: "12" # 12 dummy value
             oauthUrl: "https://github.com/login/oauth/access_token"
 
-# Checking status of services
+# Get launcher route
 - name: get launcher route
   shell: "oc get route {{ launcher_route_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
   register: launcher_route_output
@@ -238,6 +239,36 @@
 - set_fact:
     launcher_route: "{{ launcher_route_output.stdout }}"
 
+# Create OAuth Client secret
+- name: Create OAuth Client secret
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: launcher-oauth-github
+        namespace: "{{ project_name }}"
+      type: Opaque
+      data:
+        clientId: MTI= # 12 dummy value
+        secret: MTI=   # 12 dummy value
+
+# Create OAuthClient
+- name: Create OAuthClient
+  k8s:
+    state: present
+    definition:
+      apiVersion: oauth.openshift.io/v1
+      kind: OAuthClient
+      metadata:
+        name: launcher
+      secret: launcher-oauth-github
+      redirectURIs:
+        - "https://{{ launcher_route }}"
+      grantMethod: prompt
+
+# Checking status of services
 - name: wait for launcher to be running
   uri:
     url: https://{{ launcher_route }}
