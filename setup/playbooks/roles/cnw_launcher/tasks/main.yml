@@ -271,6 +271,7 @@
 # Checking status of services
 - name: wait for launcher to be running
   uri:
+    validate_certs: false
     url: https://{{ launcher_route }}
     status_code: 200
   register: result
