@@ -17,7 +17,6 @@
         name: "{{ pipelines_subsription_name }}"
         source: "{{ pipelines_subsription_source }}"
         sourceNamespace: "{{ pipelines_subsription_source_namespace }}"
-        startingCSV: "{{ pipelines_subsription_starting_csv }}"
 
 # Checking status of the operator
 - name: wait for pipelines csv to be ready

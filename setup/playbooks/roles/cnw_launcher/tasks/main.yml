@@ -235,6 +235,9 @@
   shell: "oc get route {{ launcher_route_name }} -o jsonpath='{ .spec.host }' -n {{ project_name }}"
   register: launcher_route_output
   changed_when: false
+  until: launcher_route_output.rc == 0
+  retries: 30
+  delay: 30
 
 - set_fact:
     launcher_route: "{{ launcher_route_output.stdout }}"

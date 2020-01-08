@@ -104,7 +104,7 @@
       deploy_jenkins: false
       jenkins_max_cpu: 2
       jenkins_max_mem: 2Gi
-      
+
   # deploy gogs
   - import_role:
       name: openshift_gogs
@@ -150,6 +150,11 @@
       name: cnw_serverless
     tags: serverless
   
+  # deploy kafka operator
+  - import_role:
+      name: cnw_kafka
+    tags: kafka
+
   # deploy logging
   - import_role:
       name: cnw_logging

@@ -1,10 +1,11 @@
 #!/bin/sh
 MYDIR="$( cd "$(dirname "$0")" ; pwd -P )"
 function usage() {
-    echo "usage: $(basename $0) [-g/--guide -c/--count usercount -n/--namespace infra-namespace -m/--monitoring -e/--etherpad -w/--workspaces -s/--serverless -l/--launcher]"
+    echo "usage: $(basename $0) [-p/--playbook -g/--guide -c/--count usercount -n/--namespace infra-namespace -m/--monitoring -e/--etherpad -w/--workspaces -s/--serverless -l/--launcher]"
 }
 
 # Defaults
+PLAYBOOK=provision.yml
 GUIDE_NAME=_cloud-native-workshop.yml
 USER_COUNT=10
 INFRA_NAMESPACE="lab-infra"
@@ -20,6 +21,11 @@ do
 key="$1"
 
 case $key in
+    -p|--playbook)
+    PLAYBOOK="$2"
+    shift # past argument
+    shift # past value
+    ;;
     -g|--guide)
     GUIDE_NAME="$2"
     shift # past argument
@@ -74,7 +80,7 @@ oc new-project ${INFRA_NAMESPACE}
 #printf "[defaults]\nroles_path = ${ROLES_PATH}" > ansible.cfg
 #export ANSIBLE_CONFIG=./ansible.cfg
 
-ansible-playbook -vvv playbooks/provision.yml \
+ansible-playbook -vvv playbooks/${PLAYBOOK} \
     -e infra_namespace=${INFRA_NAMESPACE} \
     -e monitoring_namespace=${MONITORING_NAMESPACE} \
     -e etherpad_namespace=${ETHERPAD_NAMESPACE} \

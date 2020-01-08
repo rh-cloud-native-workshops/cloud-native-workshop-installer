@@ -144,7 +144,6 @@
         name: cluster-logging
         source: redhat-operators
         sourceNamespace: openshift-marketplace
-        startingCSV: clusterlogging.4.2.8-201911190952
 
 # Checking status of the Cluster Logging Operator
 - name: wait for clusterlogging csv to be ready

@@ -1,0 +1,27 @@
+---
+## Install
+
+# Deploy Kafka using an operator
+- name: Create a Subscription of the kafka operator
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: "{{ kafka_subsription_name }}"
+        namespace: "{{ all_namespaces_project_name }}"
+      spec:
+        channel: "{{ kafka_subsription_channel }}"
+        installPlanApproval: "{{ kafka_subsription_install_plan_approval }}"
+        name: "{{ kafka_subsription_name }}"
+        source: "{{ kafka_subsription_source }}"
+        sourceNamespace: "{{ kafka_subsription_source_namespace }}"
+
+# Checking status of the operator
+- name: wait for kafka csv to be ready
+  shell: "oc get csv -o json -n {{ all_namespaces_project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ kafka_subsription_csv_root }}\")) | .status.phase'"
+  register: result
+  until: result.stdout == 'Succeeded'
+  retries: 30
+  delay: 30

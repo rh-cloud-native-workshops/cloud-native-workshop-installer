@@ -7,4 +7,4 @@ pipelines_subsription_source: community-operators
 pipelines_subsription_source_namespace: openshift-marketplace
 pipelines_subsription_starting_csv: openshift-pipelines-operator.v0.7.0
 
-pipelines_subsription_csv_root: openshift-pipelines-operator.v0.7
+pipelines_subsription_csv_root: openshift-pipelines-operator

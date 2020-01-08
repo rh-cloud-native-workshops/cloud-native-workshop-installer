@@ -10,13 +10,13 @@
 
 - name: create gogs project {{ project_name }}
   shell: "{{ openshift_cli }} new-project {{ project_name }} --display-name='{{ project_display_name }}' --description='{{ project_desc }}'"
-  when: gogs_project_result|failed
+  when: gogs_project_result is failed
 
 - name: assign user as project admin
   shell: "{{ openshift_cli }} adm policy add-role-to-user admin {{ project_admin }} -n {{ project_name }}"
   ignore_errors: true
   when:
-    - gogs_project_result|failed
+    - gogs_project_result is failed
     - project_admin is defined
     - project_admin is not none
     - project_admin|trim() != ""
@@ -25,7 +25,7 @@
   shell: "{{ openshift_cli }} annotate --overwrite namespace {{ project_name }} {{ project_annotations }}"
   ignore_errors: true
   when:
-    - gogs_project_result|failed
+    - gogs_project_result is failed
     - project_annotations is defined
     - project_annotations is not none
     - project_annotations|trim() != ""
@@ -42,11 +42,11 @@
     {{ openshift_cli }} delete all,cm,pvc -l app={{ gogs_service_name }} -n {{ project_name }}
     {{ openshift_cli }} delete sa {{ gogs_service_name }} -n {{ project_name }}
   when: 
-    - install_gogs|succeeded 
+    - install_gogs is succeeded 
     - clean_deploy|bool
 
 - import_tasks: deploy.yml
-  when: clean_deploy|bool or install_gogs|failed
+  when: clean_deploy|bool or install_gogs is failed
 
 # create gogs users
 - import_tasks: create_users.yml

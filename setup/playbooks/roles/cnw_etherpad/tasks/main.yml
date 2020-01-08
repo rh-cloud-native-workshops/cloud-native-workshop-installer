@@ -46,7 +46,7 @@
 - name: remove existing {{ install_etherpad_database }} if clean deploy requested
   shell: "oc delete all,cm,pvc -l app={{ etherpad_database_template_name }} -n {{ project_name }}"
   when: 
-    - install_etherpad_database|succeeded 
+    - install_etherpad_database is succeeded 
     - clean_deploy|bool
 
 - name: deploy mysql from template (persistent)
@@ -58,16 +58,16 @@
         --param VOLUME_CAPACITY={{ etherpad_database_size }} \
         --param MYSQL_VERSION={{ etherpad_database_image_version }} \
         -n {{ project_name }}
-  when: clean_deploy|bool or install_etherpad_database|failed
+  when: clean_deploy|bool or install_etherpad_database is failed
 
 - pause:
     minutes: 1
-  when: clean_deploy|bool or install_etherpad_database|failed
+  when: clean_deploy|bool or install_etherpad_database is failed
 
 - name: remove existing {{ install_etherpad }} if clean deploy requested
   shell: "oc delete all,cm,pvc -l app={{ etherpad_service_name }} -n {{ project_name }}"
   when: 
-    - install_etherpad|succeeded 
+    - install_etherpad is succeeded 
     - clean_deploy|bool
 
 - name: deploy etherpad from template
@@ -80,7 +80,7 @@
         --param DB_HOST=mysql \
         --param ADMIN_PASSWORD=secret \
         -n {{ project_name }}
-  when: clean_deploy|bool or install_etherpad|failed
+  when: clean_deploy|bool or install_etherpad is failed
 
 # Checking status of services
 - name: get etherpad route

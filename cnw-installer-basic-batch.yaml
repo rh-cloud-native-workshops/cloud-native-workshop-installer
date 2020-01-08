@@ -11,15 +11,11 @@ spec:
       - name: worker
         image: quay.io/cvicensa/cnw-installer:v0.0.2
         env:
-        - name: GUIDE_NAME
-          value: "_cloud-native-workshop-maven.yml"
-        - name: COUNT # In seconds
-          value: "50"
         - name: KUBECONFIG
           value: "/tmp/config"
         command:
         - sh
         - -c
-        - ./preparelab_cnw.sh -g ${GUIDE_NAME} -c ${COUNT}
+        - ./preparelab_cnw.sh -p provision-basic.yml
         imagePullPolicy: Always
       restartPolicy: Never

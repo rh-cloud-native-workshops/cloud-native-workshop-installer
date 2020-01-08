@@ -1,0 +1,75 @@
+- name: cloudnative-workshop-apb playbook to provision the application
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars:
+    openshift_user: 
+    openshift_password: 
+    openshift_token:
+    openshift_master_url: 
+    openshift_user_password:
+    labs_project_suffix: "-XX"
+    labs_guide_name:
+    labs_che_guide_name:
+    labs_github_account: redhat-developer-adoption-emea
+    labs_github_repo: cloud-native-guides
+    labs_github_ref: ocp-3.10
+    gogs_dev_user: developer
+    gogs_pwd: openshift
+    infrasvcs_adm_user: adminuser
+    infrasvcs_adm_pwd: adminpwd
+
+  roles:
+  - role: ansible.kubernetes-modules
+    install_python_requirements: no
+
+  tasks:    
+  - name: extract app route suffix from openshift-console
+    block:
+      - shell: "oc get route console -n openshift-console -o 'jsonpath={.spec.host}'"
+        register: console_route
+      - set_fact:
+          console_url: "https://{{ console_route.stdout }}"
+          apps_hostname_suffix: "{{ console_route.stdout |regex_replace('^console-openshift-console\\.(.*)$', '\\1') }}"
+    tags: always
+
+  - name: extract oauth route
+    block:
+      - shell: "oc get route oauth-openshift -n openshift-authentication -o 'jsonpath={.spec.host}'"
+        register: oauth_route
+      - set_fact:
+          oauth_url: "https://{{ oauth_route.stdout }}"
+    tags: always
+
+  - name: delete project quota
+    shell: "oc delete limitrange --all -n {{ infra_namespace }}"
+    ignore_errors: true
+    tags: always
+
+  # deploy monitoring
+  #- import_role:
+  #    name: cnw_monitoring
+  #  vars:
+  #    project_name: "{{ monitoring_namespace }}"
+  #  tags: monitoring
+
+  # deploy code ready workspaces
+  #- import_role:
+  #    name: cnw_workspaces
+  #  vars:
+  #    project_name: "{{ workspaces_namespace }}"
+  #  tags: code-ready-workspaces
+  
+  # deploy logging
+  - import_role:
+      name: cnw_logging
+    tags: logging
+
+  # deploy launcher
+  - import_role:
+      name: cnw_launcher
+    vars:
+      project_name: "{{ launcher_namespace }}"
+      console_url: "{{ console_url }}"
+      oauth_url: "{{ oauth_url }}"
+    tags: launcher

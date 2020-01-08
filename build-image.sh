@@ -1,9 +1,9 @@
 #!/bin/sh
 
-REGISTRY=quay.io
-REGISTRY_USER_ID=cvicensa
-IMAGE_NAME=cnw-installer
-IMAGE_VERSION=v0.0.1
+export REGISTRY=quay.io
+export REGISTRY_USER_ID=cvicensa
+export IMAGE_NAME=cnw-installer
+export IMAGE_VERSION=v0.0.2
 
 docker build -t $REGISTRY/$REGISTRY_USER_ID/$IMAGE_NAME:$IMAGE_VERSION .
 
