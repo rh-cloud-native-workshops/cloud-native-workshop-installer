@@ -20,6 +20,19 @@ Once the installer job is running you can see logs by running:
 oc logs -f jobs/cnw-installer
 ```
 
+## Componentes intalled
+
+* Nexus, Sonarqube, Gogs, and a simple Workshop Guide in `lab-infra`
+* Prometheus, Grafana in `lab-monitoring`
+* Etherpad in `lab-etherpad`
+* Code Ready Workspaces in `lab-workspaces`
+* Red Hat Openshift Pipelines Operator
+* Red Hat Serverless Operator
+* Red Hat AMQ Streams Operator (Kafka)
+* Camel K Operator and a demo integration
+* Sets Up Openshift Logging features
+* Red Hat Developers Launcher (https://launch.openshift.io/)
+
 # The logic
 
 All the logic in the job is in `./setup/preparelab_cnw.sh`, this script is run in the Job pod and by default executes a playbook called `./setup/playbooks/provision.yml`.
