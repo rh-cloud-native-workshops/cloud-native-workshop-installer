@@ -78,4 +78,7 @@ tags
 
 ### venv
 venv
+
+# Others
 roles.refresh
+.DS_Store

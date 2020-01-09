@@ -1,4 +1,0 @@
----
-- debug:
-    msg: "Ansible Service Broker modules loaded"
-    verbosity: 1

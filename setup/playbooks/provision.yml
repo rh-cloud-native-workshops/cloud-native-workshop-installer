@@ -23,7 +23,7 @@
   roles:
   - role: ansible.kubernetes-modules
     install_python_requirements: no
-  - role: ansibleplaybookbundle.asb-modules
+  #- role: ansibleplaybookbundle.asb-modules
 
   tasks:    
   - name: extract app route suffix from openshift-console
@@ -59,7 +59,7 @@
 
   # Deploy sonarqube
   - import_role:
-      name: ansible_openshift_sonarqube
+      name: openshift_sonarqube
     vars:
       project_name: "{{ infra_namespace }}"
       sonarqube_image_version: 7.0
@@ -156,7 +156,7 @@
       name: cnw_kafka
     tags: kafka
 
-    # deploy kamel
+  # deploy kamel
   - import_role:
       name: cnw_kamel
     vars:
