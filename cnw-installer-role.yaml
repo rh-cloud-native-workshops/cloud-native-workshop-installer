@@ -105,6 +105,18 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - camel.apache.org
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - kafka.strimzi.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
 
   
   

@@ -1,0 +1,19 @@
+---
+dependencies: []
+allow_duplicates: true
+
+galaxy_info:
+  role_name: cnw_kamel
+  author: Carlos Vicens
+  description: Camel K for CNW
+  company: "Red Hat"
+  license: "license (BSD, MIT)"
+  min_ansible_version: 2.3
+  platforms:
+  - name: GenericLinux
+    versions:
+    - any
+  galaxy_tags:
+    - openshift
+    - kamel
+    - camel-k

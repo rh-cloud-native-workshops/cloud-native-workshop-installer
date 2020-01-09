@@ -1,0 +1,15 @@
+project_name: camel-k-demos
+project_display_name: ''
+project_desc: ''
+
+all_namespaces_project_name: openshift-operators
+
+kamel_subsription_channel: alpha
+kamel_subsription_install_plan_approval: Automatic
+kamel_subsription_name: camel-k
+kamel_subsription_source: community-operators
+kamel_subsription_source_namespace: openshift-marketplace
+kamel_subsription_starting_csv: camel-k-operator.v1.0.0-m4
+
+kamel_subsription_csv_root: camel-k-operator
+
