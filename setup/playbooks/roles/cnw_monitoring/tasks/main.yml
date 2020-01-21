@@ -61,7 +61,6 @@
         name: "{{ prometheus_subsription_name }}"
         source: "{{ prometheus_subsription_source }}"
         sourceNamespace: "{{ prometheus_subsription_source_namespace }}"
-        startingCSV: "{{ prometheus_subsription_starting_csv }}"
 
 - name: wait for prometheus csv to be ready
   shell: "oc get csv -o json -n {{ project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ prometheus_subsription_csv_root }}\")) | .status.phase'"
@@ -209,7 +208,6 @@
         name: "{{ grafana_subsription_name }}"
         source: "{{ grafana_subsription_source }}"
         sourceNamespace: "{{ grafana_subsription_source_namespace }}"
-        startingCSV: "{{ grafana_subsription_starting_csv }}"
 
 - name: wait for grafana csv to be ready
   shell: "oc get csv -o json -n {{ project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ grafana_subsription_csv_root }}\")) | .status.phase'"

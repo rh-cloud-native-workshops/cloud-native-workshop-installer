@@ -18,7 +18,6 @@
         name: "{{ serverless_subsription_name }}"
         source: "{{ serverless_subsription_source }}"
         sourceNamespace: "{{ serverless_subsription_source_namespace }}"
-        startingCSV: "{{ serverless_subsription_starting_csv }}"
 
 # Checking status of the operator
 - name: wait for serverless csv to be ready
@@ -111,7 +110,6 @@
         name: "{{ knative_eventing_subsription_name }}"
         source: "{{ knative_eventing_subsription_source }}"
         sourceNamespace: "{{ knative_eventing_subsription_source_namespace }}"
-        startingCSV: "{{ knative_eventing_subsription_starting_csv }}"
 
 # Checking status of the operator
 - name: wait for knative eventing csv to be ready

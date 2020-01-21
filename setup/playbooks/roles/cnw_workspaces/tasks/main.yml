@@ -61,7 +61,6 @@
         name: "{{ workspaces_subsription_name }}"
         source: "{{ workspaces_subsription_source }}"
         sourceNamespace: "{{ workspaces_subsription_source_namespace }}"
-        startingCSV: "{{ workspaces_subsription_starting_csv }}"
 
 # Checking status of the operator
 - name: wait for workspaces csv to be ready
