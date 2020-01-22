@@ -117,6 +117,27 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - image.openshift.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - apps.openshift.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - template.openshift.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+
+
+
 
   
   

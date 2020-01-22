@@ -13,8 +13,8 @@ spec:
         env:
         - name: GUIDE_NAME
           value: "_cloud-native-workshop-maven.yml"
-        - name: COUNT # In seconds
-          value: "50"
+        - name: COUNT
+          value: "20"
         - name: KUBECONFIG
           value: "/tmp/config"
         command:

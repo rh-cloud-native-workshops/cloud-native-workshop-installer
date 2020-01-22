@@ -1,0 +1,10 @@
+project_name: lab-rhamt
+project_display_name: ''
+project_desc: ''
+
+user_password: 'openshift'
+
+web_console_requested_cpu: 2
+web_console_requested_memory: 4Gi
+executor_requested_cpu: 2
+executor_requested_memory: 2Gi

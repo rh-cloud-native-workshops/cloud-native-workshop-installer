@@ -1,0 +1,40 @@
+## Deploy Workshopper Guide
+
+- name: deploy workshopper
+  shell: |
+    oc new-app --name=guides-{{ item }} --docker-image=quay.io/osevg/workshopper:{{ workshopper_image_version }} \
+        -e MASTER_URL={{ master_url}} \
+        -e CONSOLE_URL={{ console_url }} \
+        -e ECLIPSE_CHE_URL={{ eclipse_che_url }} \
+        -e KEYCLOAK_URL={{ keycloak_url }} \
+        -e GIT_URL={{ git_url }} \
+        -e ROUTE_SUBDOMAIN={{ route_subdomain }} \
+        -e CONTENT_URL_PREFIX="https://raw.githubusercontent.com/RedHat-Middleware-Workshops/cloud-native-workshop-v2{{ item }}-guides/master" \
+        -e WORKSHOPS_URLS="https://raw.githubusercontent.com/RedHat-Middleware-Workshops/cloud-native-workshop-v2{{ item }}-guides/master/_cloud-native-workshop-module{{ item | regex_replace('m') }}.yml" \
+        -e CHE_USER_NAME=userXX \
+        -e CHE_USER_PASSWORD={{ user_password }} \
+        -e OPENSHIFT_USER_NAME=userXX \
+        -e OPENSHIFT_USER_PASSWORD={{ user_password }} \
+        -e RHAMT_URL={{ rhamt_url }} \
+        -e LOG_TO_STDOUT=true \
+        -n {{ project_name }}
+  register: result
+  #failed_when: ( result.stdout not in [ 204 ] )
+  with_items: "{{ modules_list }}"
+  ignore_errors: yes # TODO: check is app exists... or delete them always before...
+
+- name: expose workshopper
+  shell: |
+    oc expose svc/guides-{{ item }} -n {{ project_name }}
+  with_items: "{{ modules_list }}"
+  ignore_errors: yes # TODO: check is app exists... or delete them always before...
+
+- name: set workshopper resources
+  shell: "oc set resources dc/guides-{{ item }} --limits=cpu={{ max_cpu }},memory={{ max_memory }} --requests=cpu={{ min_cpu }},memory={{ min_memory }} -n {{ project_name }}"
+  with_items: "{{ modules_list }}"
+  ignore_errors: yes # TODO: check is app exists... or delete them always before...
+
+- name: set workshopper probes
+  shell: "oc set probe dc/guides-{{ item }} -n {{ project_name }} --readiness --liveness --get-url=http://:8080/ --failure-threshold=5 --initial-delay-seconds=30"
+  with_items: "{{ modules_list }}"
+  ignore_errors: yes # TODO: check is app exists... or delete them always before...

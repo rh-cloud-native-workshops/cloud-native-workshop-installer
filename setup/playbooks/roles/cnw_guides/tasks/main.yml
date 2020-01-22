@@ -1,0 +1,24 @@
+---
+## Install
+
+# Create guides related namespaces
+- name: Create lab-guides namespace
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ project_name }}"
+        annotations:
+          openshift.io/description: "{{ project_desc }}"
+          openshift.io/display-name: "{{ project_display_name }}"
+
+# Deploy guides...
+- include_tasks: deploy.yml
+  vars:
+    modules_list: "{{ workshopper_modules }}"
+  ignore_errors: yes # TODO: check is app exists... or delete them always before...
+
+
+            

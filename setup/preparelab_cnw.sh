@@ -87,6 +87,9 @@ ansible-playbook -vvv playbooks/${PLAYBOOK} \
     -e workspaces_namespace=${WORKSPACES_NAMESPACE} \
     -e serverless_namespace=${SERVERLESS_NAMESPACE} \
     -e launcher_namespace=${LAUNCHER_NAMESPACE} \
+    -e guides_namespace="lab-guides" \
+    -e guides_modules="m1,m2,m3,m4" \
+    -e rhamt_namespace="lab-rhamt" \
     -e openshift_token=$(oc whoami -t) \
     -e openshift_master_url=$(oc whoami --show-server) \
     -e openshift_user_password='openshift' \
@@ -98,4 +101,5 @@ ansible-playbook -vvv playbooks/${PLAYBOOK} \
     -e gogs_dev_user=developer \
     -e gogs_pwd=openshift \
     -e infrasvcs_adm_user=adminuser \
-    -e infrasvcs_adm_pwd=adminpwd
+    -e infrasvcs_adm_pwd=adminpwd \
+    -e user_count=${USER_COUNT}

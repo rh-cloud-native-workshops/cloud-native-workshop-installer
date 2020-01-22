@@ -84,6 +84,32 @@
         NEXUS_URL: http://nexus-{{ infra_namespace }}.{{ apps_hostname_suffix }}
     tags: guides
 
+  # deploy guides
+  - import_role:
+      name: cnw_guides
+    vars:
+      workshopper_name: guides
+      project_name: "{{ guides_namespace }}"
+      master_url: "{{ openshift_master_url }}"
+      console_url:
+      eclipse_che_url: "http://che-{{ workspaces_namespace }}.{{ apps_hostname_suffix }}"
+      keycloak_url: "http://keycloak-{{ workspaces_namespace }}.{{ apps_hostname_suffix }}"
+      git_url: "http://gogs-{{ infra_namespace }}.{{ apps_hostname_suffix }}"
+      rhamt_url: "http://rhamt-{{ infra_namespace }}.{{ apps_hostname_suffix }}"
+      route_subdomain: "{{ apps_hostname_suffix }}"
+      user_password: "{{ openshift_user_password }}"
+      workshopper_modules: "{{ guides_modules.split(',') }}"
+    tags: guides
+
+  # deploy red hat application migration toolkit (web console)
+  - import_role:
+      name: cnw_rhamt
+    vars:
+      project_name: "{{ rhamt_namespace }}"
+      user_password: "{{ openshift_user_password }}"
+      user_count: "{{ user_count }}"
+    tags: rhamt
+
   # install openjdk imagestream
   - name: get openjdk image stream
     shell: "oc get is java -n openshift"

@@ -1,0 +1,230 @@
+---
+## Install
+
+# Create RHAMT related namespaces
+- name: Create rhamt namespace
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ project_name }}"
+        annotations:
+          openshift.io/description: "{{ project_desc }}"
+          openshift.io/display-name: "{{ project_display_name }}"
+
+# Get RHAMT deployments
+- name: Fetch DeploymentConfig objects with label selector app=rhamt-web-console
+  set_fact:
+    deployments: "{{ lookup('k8s', kind='DeploymentConfig', namespace=project_name, label_selector='app=rhamt-web-console') }}"
+
+# Deploy RHAMT
+- name: deploy RHAMT
+  shell: |
+    oc process -f "{{ role_path }}/files/web-template-empty-dir-executor.json" \
+      -p WEB_CONSOLE_REQUESTED_CPU={{ web_console_requested_cpu }} \
+      -p WEB_CONSOLE_REQUESTED_MEMORY={{ web_console_requested_memory }} \
+      -p EXECUTOR_REQUESTED_CPU={{ executor_requested_cpu }} \
+      -p EXECUTOR_REQUESTED_MEMORY={{ executor_requested_memory }} | oc create -n {{ project_name }}  -f -
+  when: deployments is not defined or (deployments | length <= 0)
+
+# Get RHAMT route
+- name: get RHAMT route
+  shell: "oc get route secure-rhamt-web-console -o jsonpath='{ .spec.host }' -n {{ project_name }}"
+  register: rhamt_route_output
+  changed_when: false
+  until: rhamt_route_output.rc == 0
+  retries: 30
+  delay: 30
+
+- set_fact:
+    rhamt_route: "{{ rhamt_route_output.stdout }}"
+
+# Checking status of services
+- name: wait for RHAMT to be running
+  uri:
+    validate_certs: false
+    url: https://{{ rhamt_route }}
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 30
+  delay: 30
+
+# Getting access token to update RH-SSO theme
+#- name: Getting access token to update RH-SSO theme
+#  shell: |
+#    curl -k -X POST https://{{ rhamt_route }}/auth/realms/master/protocol/openid-connect/token \
+#      -H "Content-Type: application/x-www-form-urlencoded" \
+#      -d "username=admin" \
+#      -d 'password=password' \
+#      -d 'grant_type=password' \
+#      -d 'client_id=admin-cli' | jq -r '.access_token'
+#  register: get_access_token_output
+
+- name: Getting access token to update RH-SSO theme
+  uri:
+    url: https://{{ rhamt_route }}/auth/realms/master/protocol/openid-connect/token
+    method: POST
+    return_content: yes
+    body_format: form-urlencoded
+    body:
+      username: admin
+      password: password
+      grant_type: password
+      client_id: admin-cli
+    status_code: [200, 201, 409]
+  register: get_access_token_output
+  
+# Updating a master realm with RH-SSO theme
+#- name: Updating a master realm with RH-SSO theme
+#  shell: |
+#    curl -s -w '%{http_code}' -o /dev/null  -k -X PUT https://{{ rhamt_route }}/auth/admin/realms/master/ \
+#      -H "Content-Type: application/json" \
+#      -H "Accept: application/json" \
+#      -H "Authorization: Bearer {{ get_access_token_output.stdout }}" \
+#      -d '{ "displayName": "rh-sso", "displayNameHtml": "<strong>Red Hat</strong><sup>®</sup> Single Sign On", "loginTheme": "rh-sso", "adminTheme": "rh-sso", "accountTheme": "rh-sso", "emailTheme": "rh-sso", "accessTokenLifespan": 6000 }'
+#  register: update_master_realm_output
+#
+#- fail:
+#    msg: Failure to update a master realm with RH-SSO theme with {{ update_master_realm_output }}
+#  when: update_master_realm_output != "204"
+
+- name: Updating a master realm with RH-SSO theme
+  uri:
+    url: https://{{ rhamt_route }}/auth/admin/realms/master/
+    method: PUT
+    return_content: yes
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+      Authorization: "Bearer {{ get_access_token_output.json.access_token }}"
+    body_format: json
+    body:
+      displayName: "rh-sso"
+      displayNameHtml: "<strong>Red Hat</strong><sup>®</sup> Single Sign On"
+      loginTheme: "rh-sso"
+      adminTheme: "rh-sso"
+      accountTheme: "rh-sso"
+      emailTheme: "rh-sso"
+      accessTokenLifespan: 6000
+    status_code: [204]
+  register: update_master_realm_output
+
+    #with_sequence: start=1 end={{ usercount }} stride=1 format=user%i
+    #register: result
+    #failed_when: ( result not in [ 200, 201, 409 ] )
+
+# Creating RH-SSO users as many as gogs users
+#- name: Creating RH-SSO users
+#  shell: |
+#    curl -s -w '%{http_code}' -o /dev/null  -k -X POST https://{{ rhamt_route }}/auth/admin/realms/rhamt/users \
+#      -H "Content-Type: application/json" \
+#      -H "Accept: application/json" \
+#      -H "Authorization: Bearer {{ get_access_token_output.stdout }}" \
+#      -d '{ "username": "{{ item }}", "enabled": true, "disableableCredentialTypes": [ "password" ] }'
+#  with_sequence: start=1 end={{ usercount }} stride=1 format=user%i
+#  register: result
+#  failed_when: ( result not in [ 200, 201, 409 ] )
+
+- name: Creating RH-SSO users
+  uri:
+    url: https://{{ rhamt_route }}/auth/admin/realms/rhamt/users
+    method: POST
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+      Authorization: "Bearer {{ get_access_token_output.json.access_token }}"
+    body_format: json
+    body:
+      username: "{{ item }}"
+      enabled: true
+      disableableCredentialTypes: [ "password" ]
+    status_code: [200, 201, 409]
+  with_sequence: start=1 end={{ user_count }} stride=1 format=user%i
+
+# Retrieving RH-SSO user's ID list
+#- name: Retrieve RH-SSO users list
+#  shell: |
+#    curl -k -X GET https://{{ rhamt_route }}/auth/admin/realms/rhamt/users/ \
+#      -H "Accept: application/json" \
+#      -H "Authorization: Bearer {{ get_access_token_output.stdout }}"
+#  register: retrieve_rhsso_user_list_output
+#
+#- set_fact:
+#    retrieve_rhsso_user_list: "{{ retrieve_rhsso_user_list_output.stdout | from_json }}"
+
+- name: Retrieve RH-SSO users list
+  uri:
+    url: https://{{ rhamt_route }}/auth/admin/realms/rhamt/users/
+    method: GET
+    return_content: yes
+    headers:
+      Accept: "application/json"
+      Authorization: "Bearer {{ get_access_token_output.json.access_token }}"
+    status_code: [200]
+  register: retrieve_rhsso_user_list_output
+
+# Getting access token to reset passwords
+#- name: Getting access token to reset passwords
+#  shell: |
+#    curl -k -X POST https://{{ rhamt_route }}/auth/realms/master/protocol/openid-connect/token \
+#      -H "Content-Type: application/x-www-form-urlencoded" \
+#      -d "username=admin" \
+#      -d 'password=password' \
+#      -d 'grant_type=password' \
+#      -d 'client_id=admin-cli' | jq -r '.access_token')
+#  register: get_reset_password_token_output
+
+- name: Getting access token to reset passwords
+  uri:
+    url: https://{{ rhamt_route }}/auth/realms/master/protocol/openid-connect/token
+    method: POST
+    return_content: yes
+    body_format: form-urlencoded
+    body:
+      username: admin
+      password: password
+      grant_type: password
+      client_id: admin-cli
+    status_code: [200, 201, 409]
+  register: get_reset_password_token_output
+
+# Reset users passwords
+#- name: Reset users passwords
+#  shell: |
+#    curl -s -w '%{http_code}' -o /dev/null -k -X PUT https://{{ rhamt_route }}/auth/admin/realms/rhamt/users/{{ item.id }}/reset-password \
+#      -H "Content-Type: application/json" \
+#      -H "Accept: application/json" \
+#      -H "Authorization: Bearer {{ get_reset_password_token_output }}" \
+#      -d '{ "type": "password", "value": "{{ user_password }}", "temporary": true}'
+#  with_items: retrieve_rhsso_user_list
+#  register: result
+#  failed_when: ( result not in [ 204 ] )
+#  when: item.name != 'rhamt'
+
+#- debug:
+#    msg: "{{ retrieve_rhsso_user_list_output.json }}"
+
+- debug:
+    msg: "{{ item }}"
+  with_items: "{{ retrieve_rhsso_user_list_output.json }}"
+
+- name: Reset users passwords
+  uri:
+    url: https://{{ rhamt_route }}/auth/admin/realms/rhamt/users/{{ item.id }}/reset-password
+    method: PUT
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+      Authorization: "Bearer {{ get_reset_password_token_output.json.access_token }}"
+    body_format: json
+    body:
+      type: "password"
+      value: "{{ user_password }}"
+      temporary: true
+    status_code: [204]
+  with_items: "{{ retrieve_rhsso_user_list_output.json }}"
+  when: item.username != 'rhamt'
+  
