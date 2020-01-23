@@ -22,6 +22,6 @@
 - name: wait for kafka csv to be ready
   shell: "oc get csv -o json -n {{ all_namespaces_project_name }} | jq -r '.items[] | select(.metadata.name | contains(\"{{ kafka_subsription_csv_root }}\")) | .status.phase'"
   register: result
-  until: result.stdout == 'Succeeded'
+  until: result.stdout.find("Succeeded") != -1
   retries: 30
   delay: 30

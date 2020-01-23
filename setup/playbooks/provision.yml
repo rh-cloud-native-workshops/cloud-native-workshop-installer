@@ -48,7 +48,24 @@
     ignore_errors: true
     tags: always
 
-  # Deploy nexus
+  # deploy gogs
+  - import_role:
+      name: cnw_gogs
+    vars:
+      project_name: "{{ infra_namespace }}"
+      gogs_route: "gogs-{{ infra_namespace }}.{{ apps_hostname_suffix }}"
+      gogs_image_version: 0.11.34
+      gogs_database_image_version: 10
+      gogs_admin_user: "{{ infrasvcs_adm_user }}"
+      gogs_admin_password: "{{ infrasvcs_adm_pwd }}"
+      gogs_user: "{{ gogs_dev_user }}"
+      gogs_password: "{{ gogs_pwd }}"
+      gogs_generate_user_count: "{{ user_count|int }}"
+      gogs_generate_user_format: "user%d"
+      modules_list: "{{ guides_modules.split(',') }}"
+    tags: gogs
+
+  # deploy nexus
   - import_role:
       name: openshift_sonatype_nexus
     vars:
@@ -95,7 +112,7 @@
       eclipse_che_url: "http://che-{{ workspaces_namespace }}.{{ apps_hostname_suffix }}"
       keycloak_url: "http://keycloak-{{ workspaces_namespace }}.{{ apps_hostname_suffix }}"
       git_url: "http://gogs-{{ infra_namespace }}.{{ apps_hostname_suffix }}"
-      rhamt_url: "http://rhamt-{{ infra_namespace }}.{{ apps_hostname_suffix }}"
+      rhamt_url: "http://rhamt-{{ rhamt_namespace }}.{{ apps_hostname_suffix }}"
       route_subdomain: "{{ apps_hostname_suffix }}"
       user_password: "{{ openshift_user_password }}"
       workshopper_modules: "{{ guides_modules.split(',') }}"
@@ -131,20 +148,6 @@
       deploy_jenkins: false
       jenkins_max_cpu: 2
       jenkins_max_mem: 2Gi
-
-  # deploy gogs
-  - import_role:
-      name: openshift_gogs
-    vars:
-      project_name: "{{ infra_namespace }}"
-      gogs_route: "gogs-{{ infra_namespace }}.{{ apps_hostname_suffix }}"
-      gogs_image_version: 0.11.34
-      gogs_database_image_version: 10
-      gogs_admin_user: "{{ infrasvcs_adm_user }}"
-      gogs_admin_password: "{{ infrasvcs_adm_pwd }}"
-      gogs_user: "{{ gogs_dev_user }}"
-      gogs_password: "{{ gogs_pwd }}"
-    tags: gogs
 
   # deploy monitoring
   - import_role:

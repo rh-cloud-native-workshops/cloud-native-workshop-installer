@@ -11,7 +11,17 @@ gogs_user: developer
 gogs_password: developer
 
 gogs_generate_user_count: 0
-gogs_generate_user_format: user%02d
+gogs_generate_user_format: "user%d"
+
+modules_list:
+  - m1
+  - m2
+user_template:
+  id: "{{ item|int + 2 }}" # this is because we create a couple of users before the list of users
+  user_name: "{{ gogs_generate_user_format | format(item|int) }}"
+repo_template:
+  clone_addr: "https://github.com/RedHat-Middleware-Workshops/cloud-native-workshop-v2{{ item }}-labs.git"
+  repo_name: "cloud-native-workshop-v2{{ item }}-labs"
 
 project_name: gogs
 project_display_name: Gogs

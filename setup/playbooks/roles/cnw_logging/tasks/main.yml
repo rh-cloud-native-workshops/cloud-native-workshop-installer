@@ -80,7 +80,7 @@
 - name: wait for elasticsearch-operator csv to be ready
   shell: "oc get csv -o json -n openshift-logging | jq -r '.items[] | select(.metadata.name | contains(\"elasticsearch-operator\")) | .status.phase'"
   register: result
-  until: result.stdout == 'Succeeded'
+  until: result.stdout.find("Succeeded") != -1
   retries: 30
   delay: 30
 
@@ -149,7 +149,7 @@
 - name: wait for clusterlogging csv to be ready
   shell: "oc get csv -o json -n openshift-logging | jq -r '.items[] | select(.metadata.name | contains(\"clusterlogging\")) | .status.phase'"
   register: result
-  until: result.stdout == 'Succeeded'
+  until: result.stdout.find("Succeeded") != -1
   retries: 30
   delay: 30
   

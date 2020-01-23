@@ -26,20 +26,52 @@
     body_format: json
     user: "{{ gogs_admin_user }}"
     password: "{{ gogs_admin_password }}"
-    status_code: 200,201
+    status_code: 200,201,422
     force_basic_auth: true
   when: user_result.status != 200
+
+- name: Build a list with users
+  set_fact:
+    users_list: "{{ (users_list | default([])) + [user_template] }}"
+  with_sequence: start=1 end={{ gogs_generate_user_count }}
+  when: (gogs_generate_user_count|int > 0)
+
+- debug:
+    msg: "users_list: {{ users_list }}"
 
 - name: generate gogs users
   uri:
     url: http://{{ gogs_route }}/api/v1/admin/users
     method: POST
-    body: "{'login_name': '{{ item }}', 'username': '{{ item }}', 'email': '{{ item }}@gogs.com', 'password': '{{ gogs_password }}'}"
+    body: "{'login_name': '{{ item.user_name }}', 'username': '{{ item.user_name }}', 'email': '{{ item.user_name }}@gogs.com', 'password': '{{ gogs_password }}'}"
     body_format: json
     user: "{{ gogs_admin_user }}"
     password: "{{ gogs_admin_password }}"
-    status_code: 200,201
+    status_code: 200,201,422
     force_basic_auth: true
   ignore_errors: true
-  with_sequence: start=0 end={{ gogs_generate_user_count }} format="{{ gogs_generate_user_format }}"
-  when: gogs_generate_user_count > 0
+  with_items: "{{ users_list }}"
+
+# Create users' private repo
+- name: Build a list of repos with the module list
+  set_fact:
+    repos_list: "{{ (repos_list | default([])) + [repo_template] }}"
+  with_items: "{{ modules_list }}"
+
+- debug:
+    msg: "repos_list: {{ repos_list }}"
+
+- name: Create users' private repo
+  uri:
+    url: http://{{ gogs_route }}/api/v1/repos/migrate
+    method: POST
+    body: "{'clone_addr': '{{ item.0.clone_addr }}', 'uid': {{ item.1.id }}, 'repo_name': '{{ item.0.repo_name }}'}"
+    body_format: json
+    user: "{{ gogs_admin_user }}"
+    password: "{{ gogs_admin_password }}"
+    status_code: 200,201,500
+    force_basic_auth: true
+  ignore_errors: true
+  with_nested:
+    - "{{ repos_list }}"
+    - "{{ users_list }}"
