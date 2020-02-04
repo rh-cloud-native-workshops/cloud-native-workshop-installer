@@ -2,6 +2,10 @@ project_name: lab-guides
 project_display_name: ''
 project_desc: ''
 
+external_guides_git_base_url: https://raw.githubusercontent.com/RedHat-Middleware-Workshops/cloud-native-workshop-v2
+
+gogs_route: "gogs.lab-infra:3000"
+
 modules_list:
   - 1
   - 2

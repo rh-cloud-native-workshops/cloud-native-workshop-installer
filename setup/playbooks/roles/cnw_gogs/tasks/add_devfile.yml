@@ -1,0 +1,40 @@
+---
+# Add devfile.yaml to each repo
+- name: Get CSRF token
+  uri:
+    url: http://{{ gogs_route }}/
+    method: GET
+    user: "{{ outer_item.1.user_name }}"
+    password: "{{ gogs_password }}"
+    status_code: 200
+    force_basic_auth: true
+    return_content: yes
+  register: get_csrf_token_result
+  ignore_errors: true
+    
+- debug:
+    msg: "{{ get_csrf_token_result.cookies._csrf }}"
+
+- name: Find CSRF_TOKEN
+  set_fact:
+    #csrf_token: "{{ get_csrf_token_result.content | regex_findall('content=\"(.*)\"') }}"
+    csrf_token: "{{ get_csrf_token_result.cookies._csrf }}"
+    
+
+- name: Parse devfile template
+  set_fact:
+    devfile_content: "{{ lookup('template', './ccn-devfile.j2') }}"
+
+- name: Add devfile.yaml to each repo
+  uri:
+    url: http://{{ gogs_route }}/{{ outer_item.1.user_name }}/{{ outer_item.0.repo_name }}/_new/master/
+    method: POST
+    headers:
+      Cookie: "_csrf={{ csrf_token }}"
+    body_format: form-urlencoded
+    body: "_csrf={{ csrf_token }}&tree_path=devfile.yaml&content={{ devfile_content|urlencode }}&commit_summary={{ 'file created by the cnw_installer job' | urlencode }}&commit_message={{ 'file created by the cnw_installer job' | urlencode }}&commit_choice=direct"
+    user: "{{ outer_item.1.user_name }}"
+    password: "{{ gogs_password }}"
+    status_code: 302,200,201
+    force_basic_auth: true
+  ignore_errors: true

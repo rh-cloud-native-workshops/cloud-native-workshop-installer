@@ -8,6 +8,8 @@
         --param=DATABASE_VERSION={{ gogs_database_image_version }} \
         --param=SKIP_TLS_VERIFY={{ skip_tls_verify }} \
         --param=APPLICATION_NAME={{ gogs_service_name }} \
+        --param=GOGS_VOLUME_CAPACITY={{ gogs_volume_capacity }} \
+        --param=DB_VOLUME_CAPACITY={{ gogs_db_volume_capacity }} \
         -n {{ project_name }}
   when: not ephemeral|bool
 

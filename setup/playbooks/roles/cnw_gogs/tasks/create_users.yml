@@ -75,3 +75,12 @@
   with_nested:
     - "{{ repos_list }}"
     - "{{ users_list }}"
+
+# Add devfile.yaml to each repo
+- include_tasks: add_devfile.yml
+  with_nested:
+    - "{{ repos_list }}"
+    - "{{ users_list }}"
+  loop_control:
+    loop_var: outer_item
+

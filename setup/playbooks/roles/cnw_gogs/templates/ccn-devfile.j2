@@ -1,0 +1,88 @@
+---
+apiVersion: 1.0.0
+metadata:
+  generateName: {{outer_item.0.repo_name}}-
+projects:
+  - name: {{outer_item.0.repo_name}}
+    source:
+      location: 'http://{{gogs_route}}/{{outer_item.1.user_name}}/{{outer_item.0.repo_name}}.git'
+      type: git
+      branch: master
+components:
+  - id: redhat/java11/latest
+    type: chePlugin
+  - mountSources: true
+    memoryLimit: 512Mi
+    type: dockerimage
+    volumes:
+      - name: m2
+        containerPath: /home/user/.m2
+    alias: maven
+    #image: 'quay.io/cvicensa/cnw-che-stack:7.3.1-3'
+    image: 'quay.io/openshiftlabs/cloudnative-workspaces-quarkus:1.2'
+    env:
+      - value: http://nexus.lab-infra:8081/repository/maven-all-public
+        name: MAVEN_MIRROR_URL
+      - value: /home/user/.m2
+        name: MAVEN_CONFIG
+      - value: >-
+          -XX:+UseParallelGC -XX:MinHeapFreeRatio=10
+          -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4
+          -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true
+          -Xms20m -Djava.security.egd=file:/dev/./urandom -Duser.home=/home/user
+        name: MAVEN_OPTS
+      - value: >-
+          -XX:+UseParallelGC -XX:MinHeapFreeRatio=10
+          -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4
+          -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true
+          -Xms20m -Djava.security.egd=file:/dev/./urandom
+        name: JAVA_OPTS
+      - value: >-
+          -XX:+UseParallelGC -XX:MinHeapFreeRatio=10
+          -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4
+          -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true
+          -Xms20m -Djava.security.egd=file:/dev/./urandom
+        name: JAVA_TOOL_OPTIONS
+commands:
+  - name: build
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}'
+        type: exec
+        command: 'mvn package'
+        component: maven
+  - name: clean build
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}'
+        type: exec
+        command: 'mvn clean package'
+        component: maven
+  - name: test
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}'
+        type: exec
+        command: 'mvn verify'
+        component: maven
+  - name: build and run quarkus locally
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}'
+        type: exec
+        command: 'mvn clean compile quarkus:dev'
+        component: maven
+  - name: build native quarkus
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}'
+        type: exec
+        command: 'MAVEN_OPTS="-Xmx1024M -Xss128M -XX:MetaspaceSize=512M -XX:MaxMetaspaceSize=1024M -XX:+CMSClassUnloadingEnabled" mvn clean package -Pnative -DskipTests'
+        component: maven
+  - name: package quarkus for openshift
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}'
+        type: exec
+        command: 'MAVEN_OPTS="-Xmx1024M -Xss128M -XX:MetaspaceSize=512M -XX:MaxMetaspaceSize=1024M -XX:+CMSClassUnloadingEnabled" mvn -f ${current.project.path} clean package -DskipTests -Dquarkus.profile=prod'
+        component: maven
+  - name: run spring boot
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}'
+        type: exec
+        command: 'mvn spring-boot:run'
+        component: maven
