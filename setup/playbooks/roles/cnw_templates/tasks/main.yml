@@ -1,0 +1,12 @@
+---
+## Install
+
+# Create additional templates
+- name: Installing templates
+  shell: "oc apply -f {{ templates_base_url }}/{{ item }} -n {{ templates_project_name }}"
+  register: result
+  with_items:
+    - template-binary.json
+    - template-prod.json
+    - ccn-sso72-template.json
+

@@ -48,6 +48,13 @@
     ignore_errors: true
     tags: always
 
+  # deploy guides templates
+  - import_role:
+      name: cnw_templates
+    vars:
+      templates_base_url: "https://raw.githubusercontent.com/rh-cloud-native-workshops/cloud-native-workshop-v2-infra/ocp-4.1/files"
+    tags: templates
+
   # deploy gogs
   - import_role:
       name: cnw_gogs

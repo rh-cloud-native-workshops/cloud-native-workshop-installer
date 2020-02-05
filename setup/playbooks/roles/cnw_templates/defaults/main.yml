@@ -1,0 +1,2 @@
+templates_project_name: openshift
+templates_base_url: "https://raw.githubusercontent.com/RedHat-Middleware-Workshops/cloud-native-workshop-v2-infra/ocp-4.1/files"

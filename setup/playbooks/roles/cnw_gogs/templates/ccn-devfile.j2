@@ -44,21 +44,25 @@ components:
           -Xms20m -Djava.security.egd=file:/dev/./urandom
         name: JAVA_TOOL_OPTIONS
 commands:
-  - name: build
+  - name: build monolith
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}'
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/monolith'
         type: exec
         command: 'mvn package'
         component: maven
-  - name: clean build
+        problemMatcher: []
+        group: 
+          kind: build
+          isDefault: true
+  - name: clean build monolith
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}'
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/monolith'
         type: exec
         command: 'mvn clean package'
         component: maven
-  - name: test
+  - name: test monolith
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}'
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/monolith'
         type: exec
         command: 'mvn verify'
         component: maven
