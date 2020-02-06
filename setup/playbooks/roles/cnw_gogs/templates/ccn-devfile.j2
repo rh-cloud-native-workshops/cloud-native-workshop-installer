@@ -68,25 +68,37 @@ commands:
         component: maven
   - name: build and run quarkus locally
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}'
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/inventory'
         type: exec
         command: 'mvn clean compile quarkus:dev'
         component: maven
   - name: build native quarkus
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}'
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/inventory'
         type: exec
-        command: 'MAVEN_OPTS="-Xmx1024M -Xss128M -XX:MetaspaceSize=512M -XX:MaxMetaspaceSize=1024M -XX:+CMSClassUnloadingEnabled" mvn clean package -Pnative -DskipTests'
+        command: 'mvn clean package -Pnative -DskipTests'
         component: maven
   - name: package quarkus for openshift
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}'
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/inventory'
         type: exec
-        command: 'MAVEN_OPTS="-Xmx1024M -Xss128M -XX:MetaspaceSize=512M -XX:MaxMetaspaceSize=1024M -XX:+CMSClassUnloadingEnabled" mvn -f ${current.project.path} clean package -DskipTests -Dquarkus.profile=prod'
+        command: 'mvn clean package -DskipTests -Dquarkus.profile=prod'
         component: maven
-  - name: run spring boot
+  - name: clean build catalog
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}'
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/catalog'
+        type: exec
+        command: 'mvn clean package'
+        component: maven
+  - name: build catalog
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/catalog'
+        type: exec
+        command: 'mvn package'
+        component: maven
+  - name: run spring boot catalog
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/cloud-native-workshop-v2m1-labs/catalog'
         type: exec
         command: 'mvn spring-boot:run'
         component: maven
