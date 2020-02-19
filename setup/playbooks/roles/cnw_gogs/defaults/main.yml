@@ -13,7 +13,7 @@ gogs_password: developer
 gogs_generate_user_count: 0
 gogs_generate_user_format: "user%d"
 
-gogs_volume_capacity: 10Gi
+gogs_volume_capacity: 15Gi
 gogs_db_volume_capacity: 2Gi
 
 modules_list:

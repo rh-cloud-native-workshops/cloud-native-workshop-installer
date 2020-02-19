@@ -120,7 +120,7 @@
       keycloak_url: "http://keycloak-{{ workspaces_namespace }}.{{ apps_hostname_suffix }}"
       git_url: "http://gogs-{{ infra_namespace }}.{{ apps_hostname_suffix }}"
       external_guides_git_base_url: "https://raw.githubusercontent.com/rh-cloud-native-workshops/cloud-native-workshop-v2"
-      rhamt_url: "http://rhamt-{{ rhamt_namespace }}.{{ apps_hostname_suffix }}"
+      rhamt_url: "https://secure-rhamt-web-console-{{ rhamt_namespace }}.{{ apps_hostname_suffix }}"
       route_subdomain: "{{ apps_hostname_suffix }}"
       user_password: "{{ openshift_user_password }}"
       workshopper_modules: "{{ guides_modules.split(',') }}"

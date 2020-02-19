@@ -14,7 +14,7 @@ spec:
         - name: GUIDE_NAME
           value: "_cloud-native-workshop-maven.yml"
         - name: COUNT
-          value: "20"
+          value: "40"
         - name: KUBECONFIG
           value: "/tmp/config"
         command:
