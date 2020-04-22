@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
       - name: worker
-        image: quay.io/cvicensa/cnw-installer:v0.0.1
+        image: quay.io/cvicensa/cnw-installer:ocp-4.3
         env:
         - name: COUNT # In seconds
           value: "50"

@@ -9,7 +9,7 @@ spec:
       serviceAccountName: cnw-installer
       containers:
       - name: worker
-        image: quay.io/cvicensa/cnw-installer:v0.0.2
+        image: quay.io/cvicensa/cnw-installer:ocp-4.3
         env:
         - name: GUIDE_NAME
           value: "_cloud-native-workshop-maven.yml"
