@@ -1,19 +1,19 @@
 all_namespaces_project_name: openshift-operators
 
 serverless_subsription_channel: techpreview
-serverless_subsription_install_plan_approval: Automatic
+serverless_subsription_install_plan_approval: Manual
 serverless_subsription_name: serverless-operator
 serverless_subsription_source: redhat-operators
 serverless_subsription_source_namespace: openshift-marketplace
-serverless_subsription_starting_csv: serverless-operator.v1.2.0
+serverless_subsription_starting_csv: serverless-operator.v1.4.1
 
 serverless_subsription_csv_root: serverless-operator.v1
 
 knative_eventing_subsription_channel: alpha
-knative_eventing_subsription_install_plan_approval: Automatic
+knative_eventing_subsription_install_plan_approval: Manual
 knative_eventing_subsription_name: knative-eventing-operator
 knative_eventing_subsription_source: community-operators
 knative_eventing_subsription_source_namespace: openshift-marketplace
-knative_eventing_subsription_starting_csv: knative-eventing-operator.v0.9.0
+knative_eventing_subsription_starting_csv: knative-eventing-operator.v0.11.0
 
 knative_eventing_subsription_csv_root: knative-eventing-operator

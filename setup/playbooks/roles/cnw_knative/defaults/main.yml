@@ -14,10 +14,10 @@ knative_serving_subsription_starting_csv: knative-serving-operator.v0.7.1
 knative_serving_subsription_csv_root: knative-serving-operator
 
 knative_eventing_subsription_channel: alpha
-knative_eventing_subsription_install_plan_approval: Automatic
+knative_eventing_subsription_install_plan_approval: Manual
 knative_eventing_subsription_name: knative-eventing-operator
 knative_eventing_subsription_source: community-operators
 knative_eventing_subsription_source_namespace: openshift-marketplace
-knative_eventing_subsription_starting_csv: knative-eventing-operator.v0.9.0
+knative_eventing_subsription_starting_csv: knative-eventing-operator.v0.12.0
 
 knative_eventing_subsription_csv_root: knative-eventing-operator

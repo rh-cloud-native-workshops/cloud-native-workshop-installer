@@ -64,7 +64,7 @@
             "displayName": "RHAMT Volume Capacity",
             "description": "Size of persistent storage for RHAMT volume.",
             "name": "RHAMT_VOLUME_CAPACITY",
-            "value": "10G",
+            "value": "20G",
             "required": true
         },
         {
@@ -92,7 +92,7 @@
             "displayName": "Database Volume Capacity",
             "description": "Size of persistent storage for database volume.",
             "name": "VOLUME_CAPACITY",
-            "value": "10G",
+            "value": "20G",
             "required": true
         },
         {
@@ -368,7 +368,7 @@
             "displayName": "Docker Images Tag",
             "description": "The value of the tag for the Docker imgaes to be used",
             "name": "DOCKER_IMAGES_TAG",
-            "value": "4.2.1.Final",
+            "value": "4.3.0.Final",
             "required": true
         },
         {
@@ -416,7 +416,8 @@
                     "application": "${APPLICATION_NAME}"
                 },
                 "annotations": {
-                    "description": "Route for application's http service."
+                    "description": "Route for application's http service.",
+                    "console.alpha.openshift.io/overview-app-route": "true"
                 }
             },
             "spec": {
@@ -484,7 +485,7 @@
                         "containers": [
                             {
                                 "name": "${APPLICATION_NAME}",
-                                "image": "quay.io/openshiftlabs/rhamt-web-openshift:${DOCKER_IMAGES_TAG}",
+                                "image": "docker.io/${DOCKER_IMAGES_USER}/windup-web-openshift:${DOCKER_IMAGES_TAG}",
                                 "imagePullPolicy": "Always",
                                 "resources": {
                                     "requests": {
@@ -803,7 +804,7 @@
                         "containers": [
                             {
                                 "name": "${APPLICATION_NAME}-executor",
-                                "image": "quay.io/openshiftlabs/rhamt-web-openshift-messaging-executor:${DOCKER_IMAGES_TAG}",
+                                "image": "docker.io/${DOCKER_IMAGES_USER}/windup-web-openshift-messaging-executor:${DOCKER_IMAGES_TAG}",
                                 "imagePullPolicy": "Always",
                                 "resources": {
                                     "requests": {
@@ -829,6 +830,24 @@
                                                 "/opt/rhamt-cli/bin/stop.sh"
                                             ]
                                         }
+                                    }
+                                },
+                                "livenessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/bash",
+                                            "-c",
+                                            "/opt/rhamt-cli/bin/livenessProbe.sh"
+                                        ]
+                                    }
+                                },
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/bash",
+                                            "-c",
+                                            "/opt/rhamt-cli/bin/livenessProbe.sh"
+                                        ]
                                     }
                                 },
                                 "ports": [

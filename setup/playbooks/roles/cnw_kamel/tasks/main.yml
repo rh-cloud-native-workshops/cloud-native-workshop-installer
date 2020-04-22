@@ -1,8 +1,8 @@
 ---
 ## Install
 
-# Deploy Kafka using an operator
-- name: Create a Subscription of the kafka operator
+# Deploy Camel K using an operator
+- name: Create a Subscription of the kamel operator
   k8s:
     state: present
     definition:

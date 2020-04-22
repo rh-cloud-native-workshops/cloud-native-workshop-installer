@@ -9,8 +9,8 @@
         -e KEYCLOAK_URL={{ keycloak_url }} \
         -e GIT_URL={{ git_url }} \
         -e ROUTE_SUBDOMAIN={{ route_subdomain }} \
-        -e CONTENT_URL_PREFIX="{{ external_guides_git_base_url }}{{ item }}-guides/master" \
-        -e WORKSHOPS_URLS="{{ external_guides_git_base_url }}{{ item }}-guides/master/_cloud-native-workshop-module{{ item | regex_replace('m') }}.yml" \
+        -e CONTENT_URL_PREFIX="{{ external_guides_git_base_url }}{{ item }}-guides/{{ git_ref }}" \
+        -e WORKSHOPS_URLS="{{ external_guides_git_base_url }}{{ item }}-guides/{{ git_ref }}/_cloud-native-workshop-module{{ item | regex_replace('m') }}.yml" \
         -e CHE_USER_NAME=userXX \
         -e CHE_USER_PASSWORD={{ user_password }} \
         -e OPENSHIFT_USER_NAME=userXX \
